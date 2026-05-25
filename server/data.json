@@ -1,0 +1,66 @@
+{
+  "timings": {
+    "opening": "Open 24 Hours",
+    "closing": "Everyday"
+  },
+  "prices": [
+    {
+      "item": "PS5",
+      "price": "₹___ / hour"
+    },
+    {
+      "item": "PS4",
+      "price": "₹___ / hour"
+    },
+    {
+      "item": "PS2",
+      "price": "₹___ / hour"
+    },
+    {
+      "item": "Snooker",
+      "price": "₹___ / hour"
+    },
+    {
+      "item": "Table Football",
+      "price": "₹___ / match"
+    }
+  ],
+  "offers": [
+    {
+      "title": "Weekend Combo",
+      "description": "Console gaming + snooker combo for weekend squads."
+    },
+    {
+      "title": "Friends Group Offer",
+      "description": "Special group pricing for friends playing together."
+    },
+    {
+      "title": "Birthday Gaming Plan",
+      "description": "Celebrate birthdays with gaming, group photos, and custom packages."
+    }
+  ],
+  "gallery": [
+    {
+      "title": "PS5 Setup",
+      "image": "/images/ps5.jpg"
+    },
+    {
+      "title": "Snooker Area",
+      "image": "/images/snooker.jpg"
+    },
+    {
+      "title": "Friends Zone",
+      "image": "/images/friends-zone.jpg"
+    },
+    {
+      "title": "Table Football",
+      "image": "/images/table-football.jpg"
+    }
+  ],
+  "announcement": {
+    "enabled": false,
+    "title": "",
+    "message": ""
+  },
+  "bookings": []
+}
