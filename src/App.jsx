@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   FaInstagram,
@@ -10,7 +10,6 @@ import {
   FaBirthdayCake,
   FaBolt,
   FaCrown,
-  FaTools,
   FaStar,
   FaCalendarAlt,
   FaImage,
@@ -29,6 +28,10 @@ import {
   FaCalendarDay,
   FaCheck,
   FaMapMarkerAlt,
+  FaShieldAlt,
+  FaTimes,
+  FaCircle,
+  FaCheckCircle,
 } from "react-icons/fa";
 
 const LOGO = "/images/logo.png";
@@ -104,6 +107,14 @@ const zones = [
   },
 ];
 
+const bookingGames = [
+  { name: "PS5", icon: FaGamepad, tag: "Next-gen" },
+  { name: "PS4", icon: FaHeadset, tag: "Squad games" },
+  { name: "PS2", icon: FaStar, tag: "Retro" },
+  { name: "Snooker", icon: FaTable, tag: "Premium table" },
+  { name: "Table Football", icon: FaBolt, tag: "Quick match" },
+];
+
 const benefits = [
   {
     title: "Premium Console Setup",
@@ -152,6 +163,18 @@ function loadData() {
 
 function saveData(data) {
   localStorage.setItem("hangoverDemoData", JSON.stringify(data));
+}
+
+function loadLastBookingId() {
+  try {
+    return Number(localStorage.getItem("hangoverLastBookingId")) || null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLastBookingId(id) {
+  localStorage.setItem("hangoverLastBookingId", String(id));
 }
 
 function SectionTitle({ eyebrow, title, text }) {
@@ -230,7 +253,7 @@ function Intro({ done }) {
             transition={{ duration: 0.45 }}
             className="px-5 text-center"
           >
-            <motion.img
+            <img
               src={LOGO}
               alt="Hangover Gaming Cult"
               className="mx-auto h-28 w-28 rounded-3xl border border-yellow-400/20 object-cover shadow-[0_0_45px_rgba(245,197,66,0.25)] sm:h-36 sm:w-36"
@@ -294,7 +317,91 @@ function Header({ setPage }) {
   );
 }
 
+function BookingStatusCard({ booking }) {
+  if (!booking) return null;
+
+  const isConfirmed = booking.status === "Confirmed";
+  const isCancelled = booking.status === "Cancelled";
+
+  const title = isConfirmed
+    ? "Your booking is confirmed"
+    : isCancelled
+    ? "Your booking was cancelled"
+    : "Your booking request is waiting";
+
+  const text = isConfirmed
+    ? "Your slot is confirmed. Please reach on time and show this booking status if needed."
+    : isCancelled
+    ? "The owner marked this booking as cancelled. Please contact the lounge or create a new request."
+    : "Your request has been sent. The owner can confirm it from the admin dashboard.";
+
+  const Icon = isConfirmed ? FaCheckCircle : isCancelled ? FaTimes : FaClock;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`mt-6 rounded-[1.7rem] border p-5 ${
+        isConfirmed
+          ? "border-green-400/20 bg-green-500/10"
+          : isCancelled
+          ? "border-red-400/20 bg-red-500/10"
+          : "border-yellow-400/20 bg-yellow-400/10"
+      }`}
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-4">
+          <div
+            className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${
+              isConfirmed
+                ? "bg-green-400 text-black"
+                : isCancelled
+                ? "bg-red-400 text-black"
+                : "bg-yellow-400 text-black"
+            }`}
+          >
+            <Icon />
+          </div>
+
+          <div>
+            <h3 className="text-xl font-black">{title}</h3>
+            <p className="mt-2 text-sm leading-6 text-zinc-300">{text}</p>
+
+            <div className="mt-4 grid gap-2 text-sm text-zinc-400 sm:grid-cols-3">
+              <p>
+                <span className="text-zinc-500">Game:</span>{" "}
+                <b className="text-white">{booking.game}</b>
+              </p>
+              <p>
+                <span className="text-zinc-500">Date:</span>{" "}
+                <b className="text-white">{booking.date}</b>
+              </p>
+              <p>
+                <span className="text-zinc-500">Time:</span>{" "}
+                <b className="text-white">{booking.time}</b>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <span
+          className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest ${
+            isConfirmed
+              ? "bg-green-400/20 text-green-300"
+              : isCancelled
+              ? "bg-red-400/20 text-red-300"
+              : "bg-yellow-400/20 text-yellow-300"
+          }`}
+        >
+          {booking.status}
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
 function HomePage({ data, setData, setPage, isMobile }) {
+  const [lastBookingId, setLastBookingId] = useState(loadLastBookingId());
   const [booking, setBooking] = useState({
     name: "",
     phone: "",
@@ -306,6 +413,11 @@ function HomePage({ data, setData, setPage, isMobile }) {
   });
 
   const [bookingStatus, setBookingStatus] = useState("");
+
+  const lastBooking = useMemo(() => {
+    if (!lastBookingId) return null;
+    return data.bookings?.find((item) => item.id === lastBookingId) || null;
+  }, [data.bookings, lastBookingId]);
 
   function submitBooking(e) {
     e.preventDefault();
@@ -329,6 +441,8 @@ function HomePage({ data, setData, setPage, isMobile }) {
 
     setData(updated);
     saveData(updated);
+    saveLastBookingId(newBooking.id);
+    setLastBookingId(newBooking.id);
 
     setBooking({
       name: "",
@@ -340,7 +454,7 @@ function HomePage({ data, setData, setPage, isMobile }) {
       message: "",
     });
 
-    setBookingStatus("Booking request sent. Owner can see it in Admin.");
+    setBookingStatus("Booking request sent. Owner can confirm it in Admin.");
   }
 
   return (
@@ -547,13 +661,7 @@ function HomePage({ data, setData, setPage, isMobile }) {
             text="Clear pricing helps customers choose quickly and book the right slot."
           />
 
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.25 }}
-            className="overflow-hidden rounded-[2rem] border border-yellow-400/20 bg-zinc-950 shadow-[0_0_45px_rgba(245,197,66,0.08)]"
-          >
+          <div className="overflow-hidden rounded-[2rem] border border-yellow-400/20 bg-zinc-950 shadow-[0_0_45px_rgba(245,197,66,0.08)]">
             <div className="grid grid-cols-2 bg-gradient-to-r from-yellow-300 to-amber-700 px-5 py-4 text-sm font-black uppercase tracking-widest text-black">
               <p>Zone</p>
               <p className="text-right">Rate</p>
@@ -568,7 +676,7 @@ function HomePage({ data, setData, setPage, isMobile }) {
                 <p className="text-right font-black text-yellow-300">{row.price}</p>
               </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -652,71 +760,126 @@ function HomePage({ data, setData, setPage, isMobile }) {
         <div className="mx-auto max-w-7xl">
           <SectionTitle
             eyebrow="Booking"
-            title="Book your slot."
-            text="Customer requests will appear in the admin dashboard."
+            title="Reserve your gaming slot."
+            text="Choose your game, pick a time, send the request, and check the booking status here after admin confirms."
           />
 
-          <form
-            onSubmit={submitBooking}
-            className="rounded-[2rem] border border-yellow-400/10 bg-zinc-950 p-5 sm:p-6"
-          >
-            <div className="grid gap-4 md:grid-cols-2">
-              <Input
-                icon={FaUser}
-                placeholder="Your name"
-                value={booking.name}
-                onChange={(value) => setBooking({ ...booking, name: value })}
-              />
-              <Input
-                icon={FaPhoneAlt}
-                placeholder="Phone number"
-                value={booking.phone}
-                onChange={(value) => setBooking({ ...booking, phone: value })}
-              />
-              <Select
-                value={booking.game}
-                onChange={(value) => setBooking({ ...booking, game: value })}
-                options={["PS5", "PS4", "PS2", "Snooker", "Table Football"]}
-              />
-              <Input
-                type="number"
-                icon={FaUsers}
-                placeholder="People count"
-                value={booking.people}
-                onChange={(value) => setBooking({ ...booking, people: value })}
-              />
-              <Input
-                type="date"
-                icon={FaCalendarDay}
-                value={booking.date}
-                onChange={(value) => setBooking({ ...booking, date: value })}
-              />
-              <Input
-                type="time"
-                icon={FaClock}
-                value={booking.time}
-                onChange={(value) => setBooking({ ...booking, time: value })}
-              />
+          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="rounded-[2rem] border border-yellow-400/10 bg-black/60 p-5 sm:p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-yellow-400 text-black">
+                  <FaShieldAlt />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black">Slot Summary</h3>
+                  <p className="text-sm text-zinc-500">Open 24 hours everyday</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                <SummaryRow label="Selected game" value={booking.game} />
+                <SummaryRow label="Date" value={booking.date || "Choose date"} />
+                <SummaryRow label="Time" value={booking.time || "Choose time"} />
+                <SummaryRow label="People" value={booking.people || "1"} />
+              </div>
+
+              <BookingStatusCard booking={lastBooking} />
             </div>
 
-            <textarea
-              placeholder="Message / special request"
-              value={booking.message}
-              onChange={(e) => setBooking({ ...booking, message: e.target.value })}
-              className="mt-4 min-h-[120px] w-full resize-none rounded-2xl border border-yellow-400/10 bg-black px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-yellow-400"
-            />
+            <form
+              onSubmit={submitBooking}
+              className="rounded-[2rem] border border-yellow-400/10 bg-zinc-950 p-5 shadow-[0_0_50px_rgba(245,197,66,0.08)] sm:p-6"
+            >
+              <div className="mb-5">
+                <h3 className="text-2xl font-black">Choose your zone</h3>
+                <p className="mt-2 text-sm text-zinc-500">
+                  Tap one game/activity to reserve a slot.
+                </p>
+              </div>
 
-            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <GoldButton type="submit">
-                <FaCheck />
-                Send Booking Request
-              </GoldButton>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {bookingGames.map((game) => {
+                  const Icon = game.icon;
+                  const active = booking.game === game.name;
 
-              {bookingStatus && (
-                <p className="text-sm font-bold text-yellow-300">{bookingStatus}</p>
-              )}
-            </div>
-          </form>
+                  return (
+                    <button
+                      type="button"
+                      key={game.name}
+                      onClick={() => setBooking({ ...booking, game: game.name })}
+                      className={`rounded-2xl border p-4 text-left transition active:scale-95 ${
+                        active
+                          ? "border-yellow-400 bg-yellow-400 text-black"
+                          : "border-yellow-400/10 bg-black text-white hover:border-yellow-400/40"
+                      }`}
+                    >
+                      <Icon className={active ? "text-black" : "text-yellow-400"} />
+                      <p className="mt-3 font-black">{game.name}</p>
+                      <p className={active ? "mt-1 text-xs text-black/70" : "mt-1 text-xs text-zinc-500"}>
+                        {game.tag}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <Input
+                  icon={FaUser}
+                  placeholder="Your name"
+                  value={booking.name}
+                  onChange={(value) => setBooking({ ...booking, name: value })}
+                />
+                <Input
+                  icon={FaPhoneAlt}
+                  placeholder="Phone number"
+                  value={booking.phone}
+                  onChange={(value) => setBooking({ ...booking, phone: value })}
+                />
+                <Input
+                  type="number"
+                  icon={FaUsers}
+                  placeholder="People count"
+                  value={booking.people}
+                  onChange={(value) => setBooking({ ...booking, people: value })}
+                />
+                <Input
+                  type="date"
+                  icon={FaCalendarDay}
+                  value={booking.date}
+                  onChange={(value) => setBooking({ ...booking, date: value })}
+                />
+                <Input
+                  type="time"
+                  icon={FaClock}
+                  value={booking.time}
+                  onChange={(value) => setBooking({ ...booking, time: value })}
+                />
+                <div className="flex items-center gap-3 rounded-2xl border border-yellow-400/10 bg-black px-4 py-3">
+                  <FaCircle className="text-xs text-green-400" />
+                  <p className="text-sm font-bold text-zinc-300">24hrs available</p>
+                </div>
+              </div>
+
+              <textarea
+                placeholder="Message / special request"
+                value={booking.message}
+                onChange={(e) => setBooking({ ...booking, message: e.target.value })}
+                className="mt-4 min-h-[120px] w-full resize-none rounded-2xl border border-yellow-400/10 bg-black px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-yellow-400"
+              />
+
+              <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
+                <GoldButton type="submit">
+                  <FaCheck />
+                  Send Booking Request
+                </GoldButton>
+
+                {bookingStatus && (
+                  <p className="text-sm font-bold text-yellow-300">{bookingStatus}</p>
+                )}
+              </div>
+            </form>
+          </div>
         </div>
       </section>
 
@@ -764,6 +927,15 @@ function HomePage({ data, setData, setPage, isMobile }) {
   );
 }
 
+function SummaryRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-yellow-400/10 bg-white/[0.04] px-4 py-3">
+      <p className="text-sm text-zinc-500">{label}</p>
+      <p className="text-sm font-black text-yellow-300">{value}</p>
+    </div>
+  );
+}
+
 function Input({ icon: Icon, value, onChange, placeholder, type = "text" }) {
   return (
     <label className="flex items-center gap-3 rounded-2xl border border-yellow-400/10 bg-black px-4 py-3 focus-within:border-yellow-400">
@@ -779,25 +951,15 @@ function Input({ icon: Icon, value, onChange, placeholder, type = "text" }) {
   );
 }
 
-function Select({ value, onChange, options }) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="rounded-2xl border border-yellow-400/10 bg-black px-4 py-3 text-sm text-white outline-none focus:border-yellow-400"
-    >
-      {options.map((item) => (
-        <option key={item}>{item}</option>
-      ))}
-    </select>
-  );
-}
-
 function AdminPage({ data, setData, setPage }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [password, setPassword] = useState("");
   const [draft, setDraft] = useState(data);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setDraft(data);
+  }, [data]);
 
   function login(e) {
     e.preventDefault();
@@ -838,7 +1000,10 @@ function AdminPage({ data, setData, setPage }) {
   function addOffer() {
     setDraft({
       ...draft,
-      offers: [...draft.offers, { title: "New Offer", description: "Offer description here." }],
+      offers: [
+        ...draft.offers,
+        { title: "New Offer", description: "Offer description here." },
+      ],
     });
   }
 
@@ -856,6 +1021,12 @@ function AdminPage({ data, setData, setPage }) {
     setDraft(copy);
     setData(copy);
     saveData(copy);
+    setMessage(
+      status === "Confirmed"
+        ? "Booking confirmed. Customer will see confirmed status."
+        : "Booking status updated."
+    );
+    setTimeout(() => setMessage(""), 1800);
   }
 
   if (!loggedIn) {
@@ -920,7 +1091,7 @@ function AdminPage({ data, setData, setPage }) {
                 Control Room
               </h1>
               <p className="mt-2 text-sm text-zinc-400">
-                Demo admin saves inside the browser for showcasing.
+                Confirm bookings, update prices, edit offers and gallery.
               </p>
             </div>
           </div>
@@ -951,35 +1122,69 @@ function AdminPage({ data, setData, setPage }) {
                   key={booking.id}
                   className="rounded-2xl border border-yellow-400/10 bg-black/60 p-4"
                 >
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <p><span className="text-zinc-500">Name:</span> <b>{booking.name}</b></p>
-                    <p><span className="text-zinc-500">Phone:</span> <b>{booking.phone}</b></p>
-                    <p><span className="text-zinc-500">Game:</span> <b>{booking.game}</b></p>
-                    <p><span className="text-zinc-500">Date:</span> <b>{booking.date}</b></p>
-                    <p><span className="text-zinc-500">Time:</span> <b>{booking.time}</b></p>
-                    <p><span className="text-zinc-500">People:</span> <b>{booking.people}</b></p>
-                  </div>
+                  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="text-xl font-black">{booking.name}</h3>
+                        <span
+                          className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest ${
+                            booking.status === "Confirmed"
+                              ? "bg-green-400/20 text-green-300"
+                              : booking.status === "Cancelled"
+                              ? "bg-red-400/20 text-red-300"
+                              : "bg-yellow-400/20 text-yellow-300"
+                          }`}
+                        >
+                          {booking.status}
+                        </span>
+                      </div>
 
-                  {booking.message && (
-                    <p className="mt-3 text-sm text-zinc-400">{booking.message}</p>
-                  )}
+                      <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
+                        <p>
+                          <span className="text-zinc-500">Phone:</span>{" "}
+                          <b>{booking.phone}</b>
+                        </p>
+                        <p>
+                          <span className="text-zinc-500">Game:</span>{" "}
+                          <b>{booking.game}</b>
+                        </p>
+                        <p>
+                          <span className="text-zinc-500">People:</span>{" "}
+                          <b>{booking.people}</b>
+                        </p>
+                        <p>
+                          <span className="text-zinc-500">Date:</span>{" "}
+                          <b>{booking.date}</b>
+                        </p>
+                        <p>
+                          <span className="text-zinc-500">Time:</span>{" "}
+                          <b>{booking.time}</b>
+                        </p>
+                        <p>
+                          <span className="text-zinc-500">Created:</span>{" "}
+                          <b>{booking.createdAt}</b>
+                        </p>
+                      </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <span className="rounded-full bg-yellow-400/10 px-4 py-2 text-xs font-black text-yellow-300">
-                      {booking.status}
-                    </span>
-                    <button
-                      onClick={() => updateBookingStatus(booking.id, "Confirmed")}
-                      className="rounded-full bg-green-500/10 px-4 py-2 text-xs font-black text-green-300"
-                    >
-                      Confirm
-                    </button>
-                    <button
-                      onClick={() => updateBookingStatus(booking.id, "Cancelled")}
-                      className="rounded-full bg-red-500/10 px-4 py-2 text-xs font-black text-red-300"
-                    >
-                      Cancel
-                    </button>
+                      {booking.message && (
+                        <p className="mt-3 text-sm text-zinc-400">{booking.message}</p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={() => updateBookingStatus(booking.id, "Confirmed")}
+                        className="rounded-full bg-green-500/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-green-300 transition hover:bg-green-500/20"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => updateBookingStatus(booking.id, "Cancelled")}
+                        className="rounded-full bg-red-500/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-red-300 transition hover:bg-red-500/20"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
