@@ -1,1567 +1,1770 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { createClient } from "@supabase/supabase-js";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  FaInstagram,
-  FaGamepad,
-  FaUsers,
+  FaPlaystation,
   FaClock,
-  FaCamera,
-  FaTrophy,
-  FaBirthdayCake,
-  FaBolt,
-  FaCrown,
-  FaStar,
-  FaCalendarAlt,
-  FaImage,
-  FaBullhorn,
-  FaHeadset,
-  FaTable,
-  FaPlay,
-  FaFire,
-  FaSave,
-  FaHome,
-  FaPlus,
-  FaTrash,
-  FaLock,
-  FaPhoneAlt,
-  FaUser,
-  FaCalendarDay,
-  FaCheck,
   FaMapMarkerAlt,
-  FaShieldAlt,
-  FaTimes,
-  FaCircle,
+  FaInstagram,
+  FaPhoneAlt,
+  FaStar,
   FaCheckCircle,
+  FaShieldAlt,
+  FaTrophy,
+  FaBars,
+  FaTimes,
+  FaCrown,
+  FaPaperPlane,
+  FaCalendarCheck,
+  FaMoneyBillWave,
+  FaTableTennis,
+  FaLock,
+  FaUnlock,
+  FaSearch,
+  FaTimesCircle,
+  FaSyncAlt,
+  FaVolumeUp,
+  FaEnvelope,
+  FaEdit,
+  FaSave,
+  FaHourglassHalf,
+  FaGlobe,
 } from "react-icons/fa";
 
-const LOGO = "/images/logo.png";
-const ADMIN_PASSWORD = "hangover123";
-const INSTAGRAM_URL = "https://instagram.com/hangover_gaming_cult";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || "owner123";
 
-const defaultData = {
-  timings: {
-    opening: "Open 24 Hours",
-    closing: "Everyday",
-  },
-  prices: [
-    { item: "PS5", price: "₹___ / hour" },
-    { item: "PS4", price: "₹___ / hour" },
-    { item: "PS2", price: "₹___ / hour" },
-    { item: "Snooker", price: "₹___ / hour" },
-    { item: "Table Football", price: "₹___ / match" },
-  ],
-  offers: [
-    {
-      title: "Weekend Combo",
-      description: "Console gaming + snooker combo for weekend squads.",
-    },
-    {
-      title: "Friends Group Offer",
-      description: "Special group pricing for friends playing together.",
-    },
-    {
-      title: "Birthday Gaming Plan",
-      description:
-        "Celebrate birthdays with gaming, group photos, and custom packages.",
-    },
-  ],
-  gallery: [
-    { title: "PS5 Setup", image: "/images/ps5.jpg" },
-    { title: "Snooker Area", image: "/images/snooker.jpg" },
-    { title: "Friends Zone", image: "/images/friends-zone.jpg" },
-    { title: "Table Football", image: "/images/table-football.jpg" },
-  ],
-  announcement: {
-    enabled: false,
-    title: "",
-    message: "",
-  },
-  bookings: [],
-};
+const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null;
 
-const zones = [
+const SAMURAI_WEBSITE_URL = "https://samurai-websites-mithun.vercel.app/";
+
+const defaultPricing = [
   {
-    title: "PS5 Zone",
-    desc: "Next-gen console gaming with premium visuals, smooth performance, and a luxury lounge feel.",
-    icon: FaGamepad,
+    service: "PS5 Session",
+    price: "₹99",
+    description: "Premium next-gen gaming session.",
+    features: ["PS5 access", "Hourly slot", "Clean controller", "Premium screen"],
   },
   {
-    title: "PS4 Zone",
-    desc: "Perfect for FIFA, WWE, racing, fighting games, cricket, and squad battles.",
-    icon: FaHeadset,
+    service: "PS4 Session",
+    price: "₹79",
+    description: "Popular console gaming session.",
+    features: ["PS4 access", "Hourly slot", "Multiplayer games", "Comfort setup"],
   },
   {
-    title: "PS2 Retro Zone",
-    desc: "Classic nostalgic gaming for old-school legends and childhood throwback sessions.",
-    icon: FaStar,
+    service: "Snooker Hour",
+    price: "₹149",
+    description: "Luxury snooker table booking.",
+    features: ["Snooker table", "Hourly booking", "Chill atmosphere", "Perfect for groups"],
   },
   {
-    title: "Snooker Arena",
-    desc: "A premium snooker experience for chill matches, competitive nights, and friend groups.",
-    icon: FaTable,
-  },
-  {
-    title: "Table Football",
-    desc: "Fast, fun, and perfect for quick matches before or after your console session.",
-    icon: FaBolt,
+    service: "Table Football",
+    price: "₹79",
+    description: "Quick and competitive fun.",
+    features: ["Table football", "Fast sessions", "Friends battle", "Chill zone access"],
   },
 ];
 
-const bookingGames = [
-  { name: "PS5", icon: FaGamepad, tag: "Next-gen" },
-  { name: "PS4", icon: FaHeadset, tag: "Squad games" },
-  { name: "PS2", icon: FaStar, tag: "Retro" },
-  { name: "Snooker", icon: FaTable, tag: "Premium table" },
-  { name: "Table Football", icon: FaBolt, tag: "Quick match" },
-];
+function makeDateOptions() {
+  const dates = [];
+  const today = new Date();
+  const endDate = new Date();
+  endDate.setFullYear(today.getFullYear() + 1);
 
-const benefits = [
-  {
-    title: "Premium Console Setup",
-    desc: "Clean gaming stations, smooth sessions, and a premium black-and-gold lounge atmosphere.",
-    icon: FaCrown,
-  },
-  {
-    title: "Friends Group Hangout",
-    desc: "Built for squads, birthday plans, weekend chill, and late-night gaming.",
-    icon: FaUsers,
-  },
-  {
-    title: "Open 24 Hours",
-    desc: "Ready for day plans, night sessions, and weekend gaming culture.",
-    icon: FaClock,
-  },
-  {
-    title: "Easy Slot Booking",
-    desc: "Customers can send booking requests directly from the website.",
-    icon: FaCalendarDay,
-  },
-];
+  const currentDate = new Date(today);
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0 },
-};
+  while (currentDate <= endDate) {
+    const value = currentDate.toISOString().slice(0, 10);
 
-const stagger = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-};
+    const day = currentDate.toLocaleDateString("en-IN", {
+      weekday: "short",
+    });
 
-function loadData() {
-  try {
-    const saved = localStorage.getItem("hangoverDemoData");
-    return saved ? JSON.parse(saved) : defaultData;
-  } catch {
-    return defaultData;
+    const date = currentDate.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+    const diffTime = currentDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    dates.push({
+      value,
+      day: diffDays === 0 ? "Today" : diffDays === 1 ? "Tomorrow" : day,
+      date,
+    });
+
+    currentDate.setDate(currentDate.getDate() + 1);
   }
+
+  return dates;
 }
 
-function saveData(data) {
-  localStorage.setItem("hangoverDemoData", JSON.stringify(data));
-}
+function makeTimeSlots() {
+  const slots = [];
 
-function loadLastBookingId() {
-  try {
-    return Number(localStorage.getItem("hangoverLastBookingId")) || null;
-  } catch {
-    return null;
+  for (let hour = 10; hour <= 23; hour++) {
+    for (const min of [0, 30]) {
+      const d = new Date();
+      d.setHours(hour, min, 0, 0);
+
+      slots.push(
+        d.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+      );
+    }
   }
+
+  return slots;
 }
 
-function saveLastBookingId(id) {
-  localStorage.setItem("hangoverLastBookingId", String(id));
-}
+export default function App() {
+  const dateOptions = useMemo(() => makeDateOptions(), []);
+  const slots = useMemo(() => makeTimeSlots(), []);
 
-function SectionTitle({ eyebrow, title, text }) {
+  const [page, setPage] = useState(() =>
+    window.location.hash === "#admin" ? "admin" : "home"
+  );
+
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const [selectedSlot, setSelectedSlot] = useState("07:00 PM");
+  const [selectedZone, setSelectedZone] = useState("PS5 Arena");
+  const [bookingDate, setBookingDate] = useState(dateOptions[0]?.value || "");
+  const [customerName, setCustomerName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const [saving, setSaving] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [latestBooking, setLatestBooking] = useState(null);
+  const [bookingError, setBookingError] = useState("");
+
+  const [trackPhone, setTrackPhone] = useState("");
+  const [trackResults, setTrackResults] = useState([]);
+  const [trackLoading, setTrackLoading] = useState(false);
+  const [trackError, setTrackError] = useState("");
+
+  const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactSaving, setContactSaving] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState("");
+  const [contactError, setContactError] = useState("");
+
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [adminInput, setAdminInput] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [bookings, setBookings] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [pricing, setPricing] = useState(defaultPricing);
+  const [loadingAdmin, setLoadingAdmin] = useState(false);
+
+  const experiences = [
+    {
+      icon: <FaPlaystation />,
+      title: "PS5 Arena",
+      desc: "Next-gen console gaming with premium screens, luxury seating, and smooth competitive energy.",
+      tag: "Next Gen",
+      image: "/images/ps5.jpg",
+    },
+    {
+      icon: <FaPlaystation />,
+      title: "PS4 Arena",
+      desc: "Fan-favorite console gaming zone for FIFA, racing, fighting games, and squad battles.",
+      tag: "Popular",
+      image: "/images/ps4.jpg",
+    },
+    {
+      icon: <FaTrophy />,
+      title: "Snooker Zone",
+      desc: "A calm premium snooker space for serious frames, friendly matches, and weekend chill sessions.",
+      tag: "Chill",
+      image: "/images/snooker.jpg",
+    },
+    {
+      icon: <FaTableTennis />,
+      title: "Table Football",
+      desc: "Fast, loud, competitive table football made for quick battles between gaming sessions.",
+      tag: "Fun",
+      image: "/images/table-football.jpg",
+    },
+  ];
+
+  const zones = ["PS5 Arena", "PS4 Arena", "Snooker Zone", "Table Football"];
+
+  const navLinks = [
+    { label: "Home", type: "home", target: "home" },
+    { label: "Experience", type: "home", target: "experience" },
+    { label: "Booking", type: "home", target: "booking" },
+    { label: "Track", type: "home", target: "track" },
+    { label: "Pricing", type: "home", target: "pricing" },
+    { label: "Gallery", type: "home", target: "gallery" },
+    { label: "Admin", type: "admin", target: "admin" },
+    { label: "Contact", type: "home", target: "contact" },
+  ];
+
+  const loadPricing = async () => {
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from("pricing")
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (!error && data?.length) setPricing(data);
+  };
+
+  const loadAdminData = async () => {
+    if (!supabase) return;
+
+    setLoadingAdmin(true);
+
+    const [bookingsRes, messagesRes, pricingRes] = await Promise.all([
+      supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+      supabase.from("messages").select("*").order("created_at", { ascending: false }),
+      supabase.from("pricing").select("*").order("id", { ascending: true }),
+    ]);
+
+    if (!bookingsRes.error) setBookings(bookingsRes.data || []);
+    if (!messagesRes.error) setMessages(messagesRes.data || []);
+    if (!pricingRes.error && pricingRes.data?.length) setPricing(pricingRes.data);
+
+    setLoadingAdmin(false);
+  };
+
+  useEffect(() => {
+    loadPricing();
+  }, []);
+
+  useEffect(() => {
+    if (adminUnlocked) loadAdminData();
+  }, [adminUnlocked]);
+
+  const goToHomeSection = (id) => {
+    setPage("home");
+    window.location.hash = "";
+
+    setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    }, 60);
+  };
+
+  const goToAdmin = () => {
+    setPage("admin");
+    window.location.hash = "admin";
+    setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 60);
+  };
+
+  const handleConfirmBooking = async () => {
+    setBookingError("");
+    setSubmitted(false);
+    setLatestBooking(null);
+
+    if (!supabase) {
+      setBookingError("Booking is not available right now. Please call the shop directly.");
+      return;
+    }
+
+    if (!customerName.trim() || !phone.trim() || !bookingDate.trim()) {
+      setBookingError("Please enter name, phone number, and booking date.");
+      return;
+    }
+
+    setSaving(true);
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .insert([
+        {
+          customer_name: customerName.trim(),
+          phone: phone.trim(),
+          booking_date: bookingDate,
+          booking_time: selectedSlot,
+          zone: selectedZone,
+          notes: notes.trim(),
+          status: "Pending",
+        },
+      ])
+      .select()
+      .single();
+
+    setSaving(false);
+
+    if (error) {
+      console.error("Booking error:", error);
+      setBookingError(error.message || "Your booking request could not be sent. Please try again.");
+      return;
+    }
+
+    setSubmitted(true);
+    setLatestBooking(data);
+    setTrackPhone(phone.trim());
+    setCustomerName("");
+    setPhone("");
+    setNotes("");
+
+    if (adminUnlocked) loadAdminData();
+  };
+
+  const trackBooking = async () => {
+    setTrackError("");
+    setTrackResults([]);
+
+    if (!supabase) {
+      setTrackError("Tracking is not available right now. Please call the shop directly.");
+      return;
+    }
+
+    if (!trackPhone.trim()) {
+      setTrackError("Enter the phone number used for booking.");
+      return;
+    }
+
+    setTrackLoading(true);
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("*")
+      .eq("phone", trackPhone.trim())
+      .order("created_at", { ascending: false });
+
+    setTrackLoading(false);
+
+    if (error) {
+      console.error("Track error:", error);
+      setTrackError(error.message || "Could not find booking status right now. Please try again.");
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      setTrackError("No booking found for this phone number.");
+      return;
+    }
+
+    setTrackResults(data);
+  };
+
+  const sendMessage = async () => {
+    setContactError("");
+    setContactSuccess("");
+
+    if (!supabase) {
+      setContactError("Message service is not available right now. Please call the shop directly.");
+      return;
+    }
+
+    if (!contactName.trim() || !contactPhone.trim() || !contactMessage.trim()) {
+      setContactError("Please enter name, phone number, and message.");
+      return;
+    }
+
+    setContactSaving(true);
+
+    const { error } = await supabase.from("messages").insert([
+      {
+        name: contactName.trim(),
+        phone: contactPhone.trim(),
+        message: contactMessage.trim(),
+        status: "Unread",
+      },
+    ]);
+
+    setContactSaving(false);
+
+    if (error) {
+      console.error("Message error:", error);
+      setContactError(error.message || "Message could not be sent. Please try again.");
+      return;
+    }
+
+    setContactSuccess("Message sent! The shop owner will see it.");
+    setContactName("");
+    setContactPhone("");
+    setContactMessage("");
+
+    if (adminUnlocked) loadAdminData();
+  };
+
+  const updateBookingStatus = async (id, status) => {
+    if (!supabase) return;
+
+    const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
+
+    if (error) {
+      console.error("Status update error:", error);
+      return;
+    }
+
+    loadAdminData();
+  };
+
+  const markMessageRead = async (id) => {
+    if (!supabase) return;
+
+    const { error } = await supabase.from("messages").update({ status: "Read" }).eq("id", id);
+
+    if (error) {
+      console.error("Message update error:", error);
+      return;
+    }
+
+    loadAdminData();
+  };
+
+  const updatePrice = (id, field, value) => {
+    setPricing((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const savePrice = async (item) => {
+    if (!supabase || !item.id) return;
+
+    const { error } = await supabase
+      .from("pricing")
+      .update({
+        price: item.price,
+        description: item.description,
+        features: Array.isArray(item.features)
+          ? item.features
+          : String(item.features || "")
+              .split(",")
+              .map((x) => x.trim())
+              .filter(Boolean),
+      })
+      .eq("id", item.id);
+
+    if (error) {
+      console.error("Pricing update error:", error);
+      return;
+    }
+
+    loadAdminData();
+  };
+
+  const unlockAdmin = () => {
+    if (adminInput === adminPassword) {
+      setAdminUnlocked(true);
+      setAdminError("");
+      setAdminInput("");
+    } else {
+      setAdminError("Wrong password. This panel is only for the shop owner.");
+    }
+  };
+
+  const totalRevenue = bookings.filter((b) => b.status === "Confirmed").length * 99;
+  const todayBookings = bookings.filter(
+    (b) => b.booking_date === new Date().toISOString().slice(0, 10)
+  ).length;
+
   return (
-    <motion.div
-      variants={fadeUp}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.45 }}
-      className="mx-auto mb-10 max-w-3xl text-center"
-    >
-      <p className="mb-3 text-xs font-black uppercase tracking-[0.35em] text-yellow-400">
-        {eyebrow}
-      </p>
-      <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-        {title}
-      </h2>
-      {text && (
-        <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
-          {text}
-        </p>
+    <div className="min-h-screen overflow-x-hidden bg-black text-white">
+      <CinematicIntro />
+
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.22),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(180,83,9,0.18),transparent_30%),linear-gradient(180deg,#020202,#090604,#000)]" />
+      <div className="fixed inset-0 -z-10 opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.35)_1px,transparent_1px)] bg-[size:54px_54px]" />
+
+      <Navbar
+        navLinks={navLinks}
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+        goToHomeSection={goToHomeSection}
+        goToAdmin={goToAdmin}
+      />
+
+      {page === "admin" ? (
+        <AdminPage
+          adminUnlocked={adminUnlocked}
+          adminInput={adminInput}
+          setAdminInput={setAdminInput}
+          adminError={adminError}
+          unlockAdmin={unlockAdmin}
+          bookings={bookings}
+          messages={messages}
+          pricing={pricing}
+          loadingAdmin={loadingAdmin}
+          loadAdminData={loadAdminData}
+          totalRevenue={totalRevenue}
+          todayBookings={todayBookings}
+          setAdminUnlocked={setAdminUnlocked}
+          updateBookingStatus={updateBookingStatus}
+          markMessageRead={markMessageRead}
+          updatePrice={updatePrice}
+          savePrice={savePrice}
+          goToHomeSection={goToHomeSection}
+        />
+      ) : (
+        <main>
+          <section id="home" className="relative min-h-screen px-5 pt-32 sm:px-8 lg:px-16">
+            <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_.95fr]">
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.9 }}
+              >
+                <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-yellow-400/30 bg-yellow-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-yellow-200 shadow-[0_0_35px_rgba(234,179,8,.25)]">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-yellow-400" />
+                  Gold Class Gaming Lounge
+                </div>
+
+                <h1 className="max-w-5xl text-5xl font-black uppercase leading-[0.9] tracking-tight sm:text-7xl lg:text-8xl">
+                  <span className="block bg-gradient-to-r from-white via-yellow-100 to-yellow-500 bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(234,179,8,.35)]">
+                    Hangover
+                  </span>
+                  <span className="block bg-gradient-to-r from-yellow-500 via-white to-yellow-700 bg-clip-text text-transparent">
+                    Gaming Cult
+                  </span>
+                </h1>
+
+                <p className="mt-7 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">
+                  Gold class lounge experience for PS5, PS4, snooker sessions,
+                  table football battles, and premium hangout nights.
+                </p>
+
+                <div className="mt-9 flex flex-col gap-4 sm:flex-row">
+                  <button
+                    onClick={() => goToHomeSection("booking")}
+                    className="rounded-full bg-gradient-to-r from-yellow-700 via-yellow-500 to-yellow-300 px-7 py-4 text-center text-sm font-black uppercase tracking-[0.2em] text-black shadow-[0_0_45px_rgba(234,179,8,.45)] transition hover:scale-[1.03] hover:shadow-[0_0_75px_rgba(234,179,8,.8)]"
+                  >
+                    Book Your Slot
+                  </button>
+
+                  <button
+                    onClick={() => goToHomeSection("track")}
+                    className="rounded-full border border-yellow-400/25 bg-white/5 px-7 py-4 text-center text-sm font-black uppercase tracking-[0.2em] text-yellow-100 backdrop-blur-xl transition hover:border-yellow-400/60 hover:bg-yellow-500/10"
+                  >
+                    Track Booking
+                  </button>
+                </div>
+
+                <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
+                  {[
+                    ["4", "Zones"],
+                    ["Full Year", "Dates"],
+                    ["Admin", "Approval"],
+                  ].map(([a, b]) => (
+                    <div
+                      key={a}
+                      className="rounded-3xl border border-yellow-400/15 bg-white/[0.04] p-4 text-center backdrop-blur-xl"
+                    >
+                      <div className="text-2xl font-black text-yellow-300">{a}</div>
+                      <div className="mt-1 text-xs uppercase tracking-[0.2em] text-white/45">
+                        {b}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <HeroImageCard />
+            </div>
+          </section>
+
+          <section id="experience" className="px-5 py-24 sm:px-8 lg:px-16">
+            <div className="mx-auto max-w-7xl">
+              <SectionTitle
+                eyebrow="Experience"
+                title="Choose your premium zone"
+                desc="PS5, PS4, snooker, and table football zones with a polished lounge vibe."
+              />
+
+              <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                {experiences.map((item, i) => (
+                  <motion.div
+                    key={item.title}
+                    initial={{ opacity: 0, y: 35 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08 }}
+                    className="group relative overflow-hidden rounded-[2rem] border border-yellow-400/15 bg-white/[0.04] shadow-[0_0_45px_rgba(234,179,8,.08)] backdrop-blur-xl transition hover:-translate-y-2 hover:border-yellow-400/50"
+                  >
+                    <div className="relative h-72 overflow-hidden">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        onError={(e) => {
+                          e.currentTarget.src = "/images/ps5.jpg";
+                        }}
+                        className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
+                      <div className="absolute left-5 top-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-400/30 bg-black/55 text-2xl text-yellow-300 backdrop-blur-xl">
+                        {item.icon}
+                      </div>
+                      <span className="absolute right-5 top-5 rounded-full border border-yellow-400/30 bg-black/55 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-yellow-200 backdrop-blur-xl">
+                        {item.tag}
+                      </span>
+                    </div>
+
+                    <div className="p-6">
+                      <h3 className="text-2xl font-black">{item.title}</h3>
+                      <p className="mt-3 leading-7 text-white/55">{item.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="booking" className="px-5 py-24 sm:px-8 lg:px-16">
+            <div className="mx-auto max-w-7xl">
+              <SectionTitle
+                eyebrow="Book now"
+                title="Request your premium slot"
+                desc="Choose your zone, select a date and time, then send your request for owner approval."
+              />
+
+              <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_.8fr]">
+                <motion.div
+                  initial={{ opacity: 0, x: -35 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  className="rounded-[2rem] border border-yellow-400/15 bg-white/[0.04] p-6 backdrop-blur-xl sm:p-8"
+                >
+                  <h3 className="text-2xl font-black">Select Date</h3>
+
+                  <div className="mt-6 max-h-96 overflow-y-auto pr-2">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                      {dateOptions.map((date) => (
+                        <button
+                          key={date.value}
+                          onClick={() => {
+                            setBookingDate(date.value);
+                            setSubmitted(false);
+                          }}
+                          className={`rounded-2xl border px-4 py-4 text-left transition ${
+                            bookingDate === date.value
+                              ? "border-yellow-400 bg-yellow-500/20 text-yellow-100 shadow-[0_0_35px_rgba(234,179,8,.35)]"
+                              : "border-white/10 bg-white/[0.04] text-white/55 hover:border-yellow-400/50 hover:bg-yellow-500/10"
+                          }`}
+                        >
+                          <div className="text-xs font-black uppercase tracking-[0.2em] text-white/45">
+                            {date.day}
+                          </div>
+                          <div className="mt-1 text-lg font-black">{date.date}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <h3 className="mt-9 text-2xl font-black">Select Time</h3>
+
+                  <div className="mt-6 max-h-80 overflow-y-auto pr-2">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                      {slots.map((slot) => (
+                        <button
+                          key={slot}
+                          onClick={() => {
+                            setSelectedSlot(slot);
+                            setSubmitted(false);
+                          }}
+                          className={`rounded-2xl border px-4 py-4 text-sm font-black transition ${
+                            selectedSlot === slot
+                              ? "border-yellow-400 bg-yellow-500/20 text-yellow-100 shadow-[0_0_35px_rgba(234,179,8,.35)]"
+                              : "border-white/10 bg-white/[0.04] text-white/55 hover:border-yellow-400/50 hover:bg-yellow-500/10"
+                          }`}
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <h3 className="mt-9 text-2xl font-black">Choose Zone</h3>
+
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    {zones.map((zone) => (
+                      <button
+                        key={zone}
+                        onClick={() => {
+                          setSelectedZone(zone);
+                          setSubmitted(false);
+                        }}
+                        className={`flex items-center justify-between rounded-2xl border px-5 py-4 text-left font-bold transition ${
+                          selectedZone === zone
+                            ? "border-yellow-400 bg-yellow-500/20 text-white shadow-[0_0_35px_rgba(234,179,8,.22)]"
+                            : "border-white/10 bg-white/[0.04] text-white/55 hover:border-yellow-400/50 hover:bg-yellow-500/10"
+                        }`}
+                      >
+                        <span>{zone}</span>
+                        {selectedZone === zone && <FaCheckCircle className="text-yellow-300" />}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: 35 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  className="relative overflow-hidden rounded-[2rem] border border-yellow-400/20 bg-gradient-to-br from-yellow-950/30 via-white/[0.05] to-black p-6 backdrop-blur-xl sm:p-8"
+                >
+                  <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-yellow-500/20 blur-3xl" />
+
+                  <div className="relative z-10">
+                    <div className="mb-6 inline-flex rounded-full border border-yellow-400/30 bg-yellow-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.25em] text-yellow-200">
+                      Booking Request
+                    </div>
+
+                    <div className="space-y-4">
+                      <InfoRow icon={<FaMapMarkerAlt />} label="Zone" value={selectedZone} />
+                      <InfoRow icon={<FaCalendarCheck />} label="Date" value={bookingDate} />
+                      <InfoRow icon={<FaClock />} label="Time" value={selectedSlot} />
+                      <InfoRow icon={<FaHourglassHalf />} label="Status" value="Waiting for Admin Approval" />
+                    </div>
+
+                    <div className="mt-7 grid gap-3">
+                      <input
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        className="rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-yellow-400/50"
+                        placeholder="Customer name"
+                      />
+                      <input
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-yellow-400/50"
+                        placeholder="Phone number"
+                      />
+                      <textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="min-h-28 rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-yellow-400/50"
+                        placeholder="Notes, game request, or special request"
+                      />
+                    </div>
+
+                    {bookingError && (
+                      <div className="mt-5 rounded-2xl border border-red-400/25 bg-red-500/10 p-4 text-sm text-red-200">
+                        {bookingError}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleConfirmBooking}
+                      disabled={saving}
+                      className="mt-6 w-full rounded-2xl bg-gradient-to-r from-yellow-700 via-yellow-500 to-yellow-300 px-7 py-4 text-sm font-black uppercase tracking-[0.2em] text-black shadow-[0_0_50px_rgba(234,179,8,.35)] transition hover:scale-[1.02] hover:shadow-[0_0_80px_rgba(234,179,8,.65)] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {saving ? "Sending Request..." : "Request Booking"}
+                    </button>
+
+                    <AnimatePresence>
+                      {submitted && latestBooking && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9, y: 15 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="mt-6 rounded-3xl border border-yellow-400/30 bg-yellow-500/10 p-5 text-center"
+                        >
+                          <FaHourglassHalf className="mx-auto mb-3 text-3xl text-yellow-300" />
+                          <h4 className="text-xl font-black text-yellow-100">Request sent!</h4>
+                          <p className="mt-2 text-sm text-white/55">
+                            Your booking is pending owner approval for {latestBooking.booking_time} at {latestBooking.zone}.
+                          </p>
+                          <p className="mt-2 text-xs uppercase tracking-[0.2em] text-white/35">
+                            Track it with your phone number below.
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </section>
+
+          <section id="track" className="px-5 py-24 sm:px-8 lg:px-16">
+            <div className="mx-auto max-w-7xl">
+              <SectionTitle
+                eyebrow="Track booking"
+                title="Check your booking status"
+                desc="Enter the same phone number used during booking to see whether your slot is pending, confirmed, or cancelled."
+              />
+
+              <div className="mx-auto mt-12 max-w-3xl rounded-[2rem] border border-yellow-400/15 bg-white/[0.04] p-6 backdrop-blur-xl sm:p-8">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    value={trackPhone}
+                    onChange={(e) => setTrackPhone(e.target.value)}
+                    className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none transition placeholder:text-white/30 focus:border-yellow-400/50"
+                    placeholder="Enter phone number"
+                  />
+                  <button
+                    onClick={trackBooking}
+                    disabled={trackLoading}
+                    className="flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-yellow-700 via-yellow-500 to-yellow-300 px-7 py-4 text-sm font-black uppercase tracking-[0.2em] text-black disabled:opacity-60"
+                  >
+                    {trackLoading ? "Checking..." : "Track"} <FaSearch />
+                  </button>
+                </div>
+
+                {trackError && (
+                  <div className="mt-5 rounded-2xl border border-red-400/25 bg-red-500/10 p-4 text-sm text-red-200">
+                    {trackError}
+                  </div>
+                )}
+
+                <div className="mt-6 grid gap-4">
+                  {trackResults.map((booking) => (
+                    <div key={booking.id} className="rounded-3xl border border-white/10 bg-black/35 p-5">
+                      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                        <div>
+                          <h3 className="text-xl font-black">{booking.zone}</h3>
+                          <p className="mt-1 text-white/45">
+                            {booking.booking_date} • {booking.booking_time}
+                          </p>
+                        </div>
+
+                        <StatusBadge status={booking.status} />
+                      </div>
+
+                      {booking.notes && (
+                        <p className="mt-4 rounded-2xl bg-white/[0.04] p-4 text-sm text-white/50">
+                          {booking.notes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="pricing" className="px-5 py-24 sm:px-8 lg:px-16">
+            <div className="mx-auto max-w-7xl">
+              <SectionTitle
+                eyebrow="Pricing"
+                title="Premium gaming packages"
+                desc="Clean pricing for PS5, PS4, snooker, and table football sessions."
+              />
+
+              <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                {pricing.map((plan, i) => (
+                  <motion.div
+                    key={plan.service}
+                    initial={{ opacity: 0, y: 35 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className={`relative overflow-hidden rounded-[2rem] border p-7 backdrop-blur-xl ${
+                      i === 2
+                        ? "border-yellow-400/40 bg-yellow-500/10 shadow-[0_0_60px_rgba(234,179,8,.18)]"
+                        : "border-white/10 bg-white/[0.04]"
+                    }`}
+                  >
+                    {i === 2 && (
+                      <div className="absolute right-5 top-5 rounded-full bg-yellow-400 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-black">
+                        Popular
+                      </div>
+                    )}
+
+                    <h3 className="text-2xl font-black">{plan.service}</h3>
+
+                    <div className="mt-5 flex items-end gap-2">
+                      <span className="text-5xl font-black text-yellow-300">{plan.price}</span>
+                      <span className="mb-2 text-white/40">/ hour</span>
+                    </div>
+
+                    <p className="mt-4 leading-7 text-white/55">{plan.description}</p>
+
+                    <div className="mt-7 space-y-3">
+                      {(plan.features || []).map((feature) => (
+                        <div key={feature} className="flex items-center gap-3 text-white/65">
+                          <FaCheckCircle className="text-yellow-300" />
+                          {feature}
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="gallery" className="px-5 py-24 sm:px-8 lg:px-16">
+            <div className="mx-auto max-w-7xl">
+              <SectionTitle
+                eyebrow="Gallery"
+                title="Premium lounge visuals"
+                desc="A rich black-and-gold visual showcase for the gaming club."
+              />
+
+              <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                {experiences.map((item, i) => (
+                  <motion.div
+                    key={item.title}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.06 }}
+                    className="group relative h-96 overflow-hidden rounded-[2rem] border border-yellow-400/15"
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      onError={(e) => {
+                        e.currentTarget.src = "/images/ps5.jpg";
+                      }}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
+                    <div className="absolute bottom-5 left-5 right-5">
+                      <h3 className="text-2xl font-black">{item.title}</h3>
+                      <p className="mt-2 text-sm text-white/55">
+                        Premium black and gold lounge experience
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="contact" className="px-5 py-24 sm:px-8 lg:px-16">
+            <div className="mx-auto max-w-7xl rounded-[2.5rem] border border-yellow-400/20 bg-gradient-to-br from-yellow-950/30 via-white/[0.04] to-black p-6 backdrop-blur-xl sm:p-10">
+              <div className="grid gap-10 lg:grid-cols-[.9fr_1.1fr]">
+                <div>
+                  <div className="mb-6 inline-flex rounded-full border border-yellow-400/30 bg-yellow-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.25em] text-yellow-200">
+                    Contact
+                  </div>
+
+                  <h2 className="text-4xl font-black uppercase sm:text-6xl">
+                    Ready to enter the cult?
+                  </h2>
+
+                  <p className="mt-5 leading-8 text-white/60">
+                    Visit the lounge, book a slot, or message for PS5, PS4, snooker, and table football sessions.
+                  </p>
+
+                  <div className="mt-8 space-y-4">
+                    <InfoRow icon={<FaPhoneAlt />} label="Phone" value="+91 XXXXX XXXXX" />
+                    <InfoRow icon={<FaInstagram />} label="Instagram" value="@hangovergamingcult" />
+                    <InfoRow icon={<FaMapMarkerAlt />} label="Location" value="Tamil Nadu, India" />
+                  </div>
+                </div>
+
+                <div className="grid gap-4">
+                  <input
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    className="rounded-2xl border border-white/10 bg-black/35 px-5 py-4 text-white outline-none placeholder:text-white/30 focus:border-yellow-400/50"
+                    placeholder="Name"
+                  />
+                  <input
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    className="rounded-2xl border border-white/10 bg-black/35 px-5 py-4 text-white outline-none placeholder:text-white/30 focus:border-yellow-400/50"
+                    placeholder="Phone"
+                  />
+                  <textarea
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value)}
+                    className="min-h-36 rounded-2xl border border-white/10 bg-black/35 px-5 py-4 text-white outline-none placeholder:text-white/30 focus:border-yellow-400/50"
+                    placeholder="Message"
+                  />
+
+                  {contactSuccess && (
+                    <div className="rounded-2xl border border-green-400/25 bg-green-500/10 p-4 text-sm text-green-200">
+                      {contactSuccess}
+                    </div>
+                  )}
+
+                  {contactError && (
+                    <div className="rounded-2xl border border-red-400/25 bg-red-500/10 p-4 text-sm text-red-200">
+                      {contactError}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={sendMessage}
+                    disabled={contactSaving}
+                    className="flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-yellow-700 via-yellow-500 to-yellow-300 px-7 py-4 text-sm font-black uppercase tracking-[0.2em] text-black shadow-[0_0_50px_rgba(234,179,8,.35)] disabled:opacity-60"
+                  >
+                    {contactSaving ? "Sending..." : "Send Message"} <FaPaperPlane />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <SiteFooter />
+        </main>
       )}
+    </div>
+  );
+}
+
+function AdminPage(props) {
+  const {
+    adminUnlocked,
+    adminInput,
+    setAdminInput,
+    adminError,
+    unlockAdmin,
+    bookings,
+    messages,
+    pricing,
+    loadingAdmin,
+    loadAdminData,
+    totalRevenue,
+    todayBookings,
+    setAdminUnlocked,
+    updateBookingStatus,
+    markMessageRead,
+    updatePrice,
+    savePrice,
+    goToHomeSection,
+  } = props;
+
+  return (
+    <main className="min-h-screen px-5 pt-32 sm:px-8 lg:px-16">
+      <div className="mx-auto max-w-7xl">
+        <button
+          onClick={() => goToHomeSection("home")}
+          className="mb-8 rounded-full border border-yellow-400/20 bg-white/[0.04] px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-yellow-100"
+        >
+          Back to website
+        </button>
+
+        <SectionTitle
+          eyebrow="Shop owner only"
+          title="Private admin dashboard"
+          desc="Owner access for bookings, messages, pricing, and session status control."
+        />
+
+        {!adminUnlocked ? (
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mx-auto mt-12 max-w-xl rounded-[2rem] border border-yellow-400/20 bg-white/[0.04] p-7 text-center backdrop-blur-xl"
+          >
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-yellow-500/15 text-3xl text-yellow-300">
+              <FaLock />
+            </div>
+
+            <h3 className="text-3xl font-black">Owner Login</h3>
+            <p className="mt-3 text-white/50">
+              Enter the shop owner password to open the private dashboard.
+            </p>
+
+            <input
+              type="password"
+              value={adminInput}
+              onChange={(e) => setAdminInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") unlockAdmin();
+              }}
+              className="mt-7 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-center text-white outline-none transition placeholder:text-white/30 focus:border-yellow-400/50"
+              placeholder="Admin password"
+            />
+
+            {adminError && (
+              <div className="mt-4 rounded-2xl border border-red-400/25 bg-red-500/10 p-4 text-sm text-red-200">
+                {adminError}
+              </div>
+            )}
+
+            <button
+              onClick={unlockAdmin}
+              className="mt-5 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-yellow-700 via-yellow-500 to-yellow-300 px-7 py-4 text-sm font-black uppercase tracking-[0.2em] text-black shadow-[0_0_50px_rgba(234,179,8,.35)]"
+            >
+              Unlock Admin <FaUnlock />
+            </button>
+          </motion.div>
+        ) : (
+          <AdminDashboard
+            bookings={bookings}
+            messages={messages}
+            pricing={pricing}
+            loadingAdmin={loadingAdmin}
+            loadAdminData={loadAdminData}
+            totalRevenue={totalRevenue}
+            todayBookings={todayBookings}
+            setAdminUnlocked={setAdminUnlocked}
+            updateBookingStatus={updateBookingStatus}
+            markMessageRead={markMessageRead}
+            updatePrice={updatePrice}
+            savePrice={savePrice}
+          />
+        )}
+      </div>
+    </main>
+  );
+}
+
+function AdminDashboard({
+  bookings,
+  messages,
+  pricing,
+  loadingAdmin,
+  loadAdminData,
+  totalRevenue,
+  todayBookings,
+  setAdminUnlocked,
+  updateBookingStatus,
+  markMessageRead,
+  updatePrice,
+  savePrice,
+}) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 35 }} animate={{ opacity: 1, y: 0 }} className="mt-12 pb-24">
+      <div className="mb-8 flex flex-col justify-between gap-4 rounded-[2rem] border border-green-400/20 bg-green-500/10 p-5 backdrop-blur-xl sm:flex-row sm:items-center">
+        <div>
+          <h3 className="text-2xl font-black text-green-100">Owner dashboard unlocked</h3>
+          <p className="mt-1 text-sm text-white/50">Private control panel for shop owners only.</p>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={loadAdminData}
+            className="flex items-center gap-2 rounded-2xl border border-yellow-400/20 bg-yellow-500/10 px-5 py-3 text-sm font-black uppercase tracking-[0.15em] text-yellow-100"
+          >
+            {loadingAdmin ? "Loading..." : "Refresh"} <FaSyncAlt />
+          </button>
+
+          <button
+            onClick={() => setAdminUnlocked(false)}
+            className="rounded-2xl border border-red-400/20 bg-red-500/10 px-5 py-3 text-sm font-black uppercase tracking-[0.15em] text-red-100"
+          >
+            Lock
+          </button>
+        </div>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-4">
+        {[
+          ["Total Bookings", bookings.length, <FaCalendarCheck />],
+          ["Messages", messages.length, <FaEnvelope />],
+          ["Today Bookings", todayBookings, <FaClock />],
+          ["Confirmed Revenue", `₹${totalRevenue}`, <FaMoneyBillWave />],
+        ].map(([label, value, icon], i) => (
+          <motion.div
+            key={label}
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.08 }}
+            className="rounded-[2rem] border border-yellow-400/15 bg-white/[0.04] p-6 backdrop-blur-xl"
+          >
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-500/15 text-2xl text-yellow-300">
+              {icon}
+            </div>
+            <div className="text-3xl font-black text-yellow-200">{value}</div>
+            <div className="mt-2 text-xs font-bold uppercase tracking-[0.2em] text-white/40">
+              {label}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <AdminBookings bookings={bookings} updateBookingStatus={updateBookingStatus} />
+      <AdminMessages messages={messages} markMessageRead={markMessageRead} />
+      <AdminPricing pricing={pricing} updatePrice={updatePrice} savePrice={savePrice} />
     </motion.div>
   );
 }
 
-function GoldButton({ children, href, variant = "primary", onClick, type }) {
-  const styles =
-    variant === "primary"
-      ? "bg-gradient-to-r from-yellow-300 via-yellow-500 to-amber-700 text-black shadow-[0_0_28px_rgba(245,197,66,0.36)]"
-      : "border border-yellow-400/40 bg-white/5 text-yellow-100 hover:bg-yellow-400/10";
-
-  const cls = `inline-flex items-center justify-center gap-3 rounded-full px-5 py-3.5 text-xs font-black uppercase tracking-wide transition active:scale-95 sm:px-6 sm:py-4 sm:text-sm ${styles}`;
-
-  if (href) {
-    return (
-      <motion.a
-        whileHover={{ scale: 1.03, y: -2 }}
-        whileTap={{ scale: 0.96 }}
-        href={href}
-        onClick={onClick}
-        className={cls}
-      >
-        {children}
-      </motion.a>
-    );
-  }
-
+function AdminBookings({ bookings, updateBookingStatus }) {
   return (
-    <motion.button
-      whileHover={{ scale: 1.03, y: -2 }}
-      whileTap={{ scale: 0.96 }}
-      type={type || "button"}
-      onClick={onClick}
-      className={cls}
-    >
-      {children}
-    </motion.button>
+    <div className="mt-8 overflow-hidden rounded-[2rem] border border-yellow-400/15 bg-white/[0.04] backdrop-blur-xl">
+      <div className="border-b border-white/10 p-6">
+        <h3 className="text-2xl font-black">Booking Requests</h3>
+        <p className="mt-2 text-sm text-white/45">
+          Confirm or cancel customer booking requests.
+        </p>
+      </div>
+
+      {bookings.length === 0 ? (
+        <div className="p-8 text-center text-white/45">No bookings yet.</div>
+      ) : (
+        <div className="divide-y divide-white/10">
+          {bookings.map((booking) => (
+            <div key={booking.id} className="grid gap-4 p-5 xl:grid-cols-8 xl:items-center">
+              <MiniInfo label="Name" value={booking.customer_name} />
+              <MiniInfo label="Phone" value={booking.phone} />
+              <MiniInfo label="Zone" value={booking.zone} />
+              <MiniInfo label="Date" value={booking.booking_date} />
+              <MiniInfo label="Time" value={booking.booking_time} />
+              <MiniInfo label="Notes" value={booking.notes || "—"} />
+
+              <div>
+                <StatusBadge status={booking.status} />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => updateBookingStatus(booking.id, "Confirmed")}
+                  className="rounded-xl border border-green-400/20 bg-green-500/10 px-3 py-2 text-xs font-black text-green-200"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => updateBookingStatus(booking.id, "Cancelled")}
+                  className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-black text-red-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
-function Intro({ done }) {
+function AdminMessages({ messages, markMessageRead }) {
+  return (
+    <div className="mt-8 overflow-hidden rounded-[2rem] border border-yellow-400/15 bg-white/[0.04] backdrop-blur-xl">
+      <div className="border-b border-white/10 p-6">
+        <h3 className="text-2xl font-black">Customer Messages</h3>
+        <p className="mt-2 text-sm text-white/45">Messages sent from the contact section.</p>
+      </div>
+
+      {messages.length === 0 ? (
+        <div className="p-8 text-center text-white/45">No messages yet.</div>
+      ) : (
+        <div className="divide-y divide-white/10">
+          {messages.map((msg) => (
+            <div key={msg.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_1fr_2fr_auto] lg:items-center">
+              <MiniInfo label="Name" value={msg.name} />
+              <MiniInfo label="Phone" value={msg.phone} />
+              <MiniInfo label="Message" value={msg.message} />
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.15em] ${
+                    msg.status === "Read"
+                      ? "bg-green-500/15 text-green-300"
+                      : "bg-yellow-500/15 text-yellow-300"
+                  }`}
+                >
+                  {msg.status}
+                </span>
+
+                <button
+                  onClick={() => markMessageRead(msg.id)}
+                  className="rounded-xl border border-yellow-400/20 bg-yellow-500/10 px-3 py-2 text-xs font-black text-yellow-100"
+                >
+                  Mark Read
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminPricing({ pricing, updatePrice, savePrice }) {
+  return (
+    <div className="mt-8 overflow-hidden rounded-[2rem] border border-yellow-400/15 bg-white/[0.04] backdrop-blur-xl">
+      <div className="border-b border-white/10 p-6">
+        <h3 className="text-2xl font-black">Change Pricing</h3>
+        <p className="mt-2 text-sm text-white/45">Edit prices and descriptions shown on the website.</p>
+      </div>
+
+      <div className="grid gap-5 p-5 md:grid-cols-2">
+        {pricing.map((item) => (
+          <div key={item.service} className="rounded-3xl border border-white/10 bg-black/35 p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h4 className="text-xl font-black">{item.service}</h4>
+              <FaEdit className="text-yellow-300" />
+            </div>
+
+            <label className="text-xs uppercase tracking-[0.2em] text-white/35">Price</label>
+            <input
+              value={item.price}
+              onChange={(e) => updatePrice(item.id, "price", e.target.value)}
+              className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-yellow-400/50"
+            />
+
+            <label className="mt-4 block text-xs uppercase tracking-[0.2em] text-white/35">Description</label>
+            <textarea
+              value={item.description || ""}
+              onChange={(e) => updatePrice(item.id, "description", e.target.value)}
+              className="mt-2 min-h-24 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-yellow-400/50"
+            />
+
+            <button
+              onClick={() => savePrice(item)}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-700 via-yellow-500 to-yellow-300 px-5 py-3 text-sm font-black uppercase tracking-[0.15em] text-black"
+            >
+              Save Price <FaSave />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MiniInfo({ label, value }) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-[0.2em] text-white/35">{label}</div>
+      <div className="line-clamp-2 font-bold text-white/75">{value}</div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const normalized = status || "Pending";
+
+  const styles = {
+    Pending: "bg-yellow-500/15 text-yellow-300",
+    Confirmed: "bg-green-500/15 text-green-300",
+    Cancelled: "bg-red-500/15 text-red-300",
+  };
+
+  const Icon =
+    normalized === "Confirmed"
+      ? FaCheckCircle
+      : normalized === "Cancelled"
+      ? FaTimesCircle
+      : FaHourglassHalf;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.15em] ${
+        styles[normalized] || styles.Pending
+      }`}
+    >
+      <Icon />
+      {normalized}
+    </span>
+  );
+}
+
+function CinematicIntro() {
+  const [showIntro, setShowIntro] = useState(true);
+  const [started, setStarted] = useState(false);
+
+  const bars = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) => ({
+        id: i,
+        top: `${8 + i * 7}%`,
+        left: `${(i * 17) % 100}%`,
+        width: `${70 + ((i * 43) % 150)}px`,
+        delay: 0.7 + i * 0.12,
+      })),
+    []
+  );
+
+  const playSFX = () => {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    const audioCtx = new AudioContextClass();
+    const master = audioCtx.createGain();
+    const compressor = audioCtx.createDynamicsCompressor();
+
+    master.gain.setValueAtTime(0.9, audioCtx.currentTime);
+    compressor.threshold.setValueAtTime(-18, audioCtx.currentTime);
+    compressor.knee.setValueAtTime(18, audioCtx.currentTime);
+    compressor.ratio.setValueAtTime(8, audioCtx.currentTime);
+    compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+    compressor.release.setValueAtTime(0.18, audioCtx.currentTime);
+
+    master.connect(compressor);
+    compressor.connect(audioCtx.destination);
+
+    const tone = (freq, start, duration, type = "sine", gain = 0.18) => {
+      const osc = audioCtx.createOscillator();
+      const vol = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
+
+      vol.gain.setValueAtTime(0.0001, audioCtx.currentTime + start);
+      vol.gain.exponentialRampToValueAtTime(gain, audioCtx.currentTime + start + 0.025);
+      vol.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + start + duration);
+
+      osc.connect(vol);
+      vol.connect(master);
+
+      osc.start(audioCtx.currentTime + start);
+      osc.stop(audioCtx.currentTime + start + duration);
+    };
+
+    const noise = (start, duration, gain = 0.42) => {
+      const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2.3);
+      }
+
+      const source = audioCtx.createBufferSource();
+      const vol = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1200, audioCtx.currentTime + start);
+
+      source.buffer = buffer;
+      vol.gain.setValueAtTime(gain, audioCtx.currentTime + start);
+      vol.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + start + duration);
+
+      source.connect(filter);
+      filter.connect(vol);
+      vol.connect(master);
+
+      source.start(audioCtx.currentTime + start);
+      source.stop(audioCtx.currentTime + start + duration);
+    };
+
+    tone(32, 0, 2.5, "sine", 0.5);
+    tone(48, 0.07, 2.1, "triangle", 0.34);
+    tone(96, 0.22, 1.5, "sawtooth", 0.14);
+    tone(210, 0.5, 1.0, "sawtooth", 0.11);
+    tone(420, 0.82, 0.55, "square", 0.07);
+    noise(0.03, 0.48, 0.55);
+    noise(1.05, 0.8, 0.7);
+    tone(760, 1.12, 0.25, "sawtooth", 0.16);
+    tone(1250, 1.18, 0.16, "square", 0.1);
+    tone(55, 1.35, 1.35, "sine", 0.48);
+  };
+
+  const startIntro = () => {
+    setStarted(true);
+    playSFX();
+    setTimeout(() => setShowIntro(false), 4300);
+  };
+
   return (
     <AnimatePresence>
-      {!done && (
+      {showIntro && (
         <motion.div
+          className="fixed inset-0 z-[9999] overflow-hidden bg-black text-white"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.45 }}
-          className="fixed inset-0 z-[100] grid place-items-center bg-black"
+          exit={{ opacity: 0, filter: "blur(22px)" }}
+          transition={{ duration: 1 }}
         >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(234,179,8,0.22),transparent_34%),linear-gradient(135deg,#030303,#171005,#020202)]" />
+
           <motion.div
-            initial={{ opacity: 0, scale: 0.86, y: 18 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.45 }}
-            className="px-5 text-center"
-          >
-            <img
-              src={LOGO}
-              alt="Hangover Gaming Cult"
-              className="mx-auto h-28 w-28 rounded-3xl border border-yellow-400/20 object-cover shadow-[0_0_45px_rgba(245,197,66,0.25)] sm:h-36 sm:w-36"
-            />
-            <h1 className="mt-6 text-xl font-black uppercase tracking-[0.18em] text-yellow-300 sm:text-3xl">
-              Hangover Gaming Cult
-            </h1>
-            <p className="mt-3 text-xs font-bold uppercase tracking-[0.35em] text-zinc-500">
-              Loading Lounge
-            </p>
-          </motion.div>
+            className="absolute inset-0 opacity-25"
+            animate={{ backgroundPosition: ["0% 0%", "100% 100%"] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
+              backgroundSize: "42px 42px",
+            }}
+          />
+
+          {!started ? (
+            <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 1 }}
+                className="mb-8 rounded-full border border-yellow-500/40 bg-yellow-500/10 px-5 py-2 text-xs font-black uppercase tracking-[0.45em] text-yellow-300 shadow-[0_0_35px_rgba(234,179,8,0.4)]"
+              >
+                Premium Lounge Experience
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1 }}
+                className="mb-6 flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-yellow-400/30 bg-white/[0.04]"
+              >
+                <img src="/images/logo.png" alt="Logo" className="h-full w-full object-cover" />
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1.2, delay: 0.2 }}
+                className="max-w-5xl text-4xl font-black uppercase tracking-tight sm:text-6xl md:text-8xl"
+              >
+                <span className="bg-gradient-to-r from-white via-yellow-200 to-yellow-600 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(234,179,8,0.7)]">
+                  Hangover Gaming
+                </span>
+              </motion.h1>
+
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "min(560px, 80vw)" }}
+                transition={{ duration: 1, delay: 0.7 }}
+                className="my-6 h-[2px] bg-gradient-to-r from-transparent via-yellow-500 to-transparent shadow-[0_0_25px_gold]"
+              />
+
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.9 }}
+                className="text-lg font-black uppercase tracking-[0.35em] text-white/80 sm:text-2xl"
+              >
+                X Samurai Websites
+              </motion.h2>
+
+              <motion.button
+                onClick={startIntro}
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 1.3 }}
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.96 }}
+                className="mt-12 flex items-center gap-3 rounded-full border border-yellow-400/60 bg-gradient-to-r from-yellow-800 via-yellow-500 to-yellow-300 px-9 py-4 text-sm font-black uppercase tracking-[0.25em] text-black shadow-[0_0_55px_rgba(234,179,8,0.65)] transition hover:shadow-[0_0_85px_rgba(234,179,8,0.9)]"
+              >
+                Enter The Cult <FaVolumeUp />
+              </motion.button>
+
+              <p className="mt-5 text-xs uppercase tracking-[0.25em] text-white/40">
+                Tap to enable cinematic audio
+              </p>
+            </div>
+          ) : (
+            <div className="relative z-10 flex min-h-screen items-center justify-center px-6 text-center">
+              <motion.div
+                initial={{ scale: 0.72, opacity: 0, rotateX: 25 }}
+                animate={{ scale: [0.72, 1.08, 1], opacity: 1, rotateX: 0 }}
+                transition={{ duration: 1.4, ease: "easeOut" }}
+                className="relative"
+              >
+                <motion.div
+                  className="absolute -inset-20 rounded-full bg-yellow-600/20 blur-3xl"
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.8, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+
+                <motion.p
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="mb-5 text-xs font-black uppercase tracking-[0.5em] text-yellow-300"
+                >
+                  Samurai Websites Presents
+                </motion.p>
+
+                <motion.h1
+                  className="text-5xl font-black uppercase leading-none tracking-tight sm:text-7xl md:text-9xl"
+                  animate={{
+                    textShadow: [
+                      "0 0 20px rgba(234,179,8,.8)",
+                      "0 0 70px rgba(234,179,8,1)",
+                      "0 0 25px rgba(234,179,8,.8)",
+                    ],
+                  }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  <span className="block bg-gradient-to-b from-white via-yellow-100 to-yellow-700 bg-clip-text text-transparent">
+                    Hangover
+                  </span>
+                  <span className="block bg-gradient-to-b from-yellow-200 via-yellow-500 to-yellow-950 bg-clip-text text-transparent">
+                    Gaming Cult
+                  </span>
+                </motion.h1>
+
+                <motion.div
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: [0, 1, 0.35, 1] }}
+                  transition={{ duration: 1.3, delay: 1.1 }}
+                  className="mx-auto mt-8 h-[3px] max-w-3xl origin-center bg-gradient-to-r from-transparent via-yellow-500 to-transparent shadow-[0_0_35px_gold]"
+                />
+              </motion.div>
+
+              <motion.div
+                initial={{ x: "-120vw", rotate: -18, opacity: 0 }}
+                animate={{ x: "120vw", opacity: [0, 1, 0] }}
+                transition={{ duration: 0.8, delay: 1.15, ease: "easeInOut" }}
+                className="absolute top-1/2 h-2 w-[160vw] bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_50px_gold]"
+              />
+
+              {bars.map((bar) => (
+                <motion.div
+                  key={bar.id}
+                  className="absolute h-2 bg-yellow-500/50"
+                  style={{ width: bar.width, top: bar.top, left: bar.left }}
+                  animate={{ opacity: [0, 1, 0], x: [0, bar.id % 2 === 0 ? 35 : -35] }}
+                  transition={{ duration: 0.24, delay: bar.delay, repeat: 4 }}
+                />
+              ))}
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
 
-function Header({ setPage }) {
+function Navbar({ navLinks, menuOpen, setMenuOpen, goToHomeSection, goToAdmin }) {
+  const handleClick = (link) => {
+    setMenuOpen(false);
+    if (link.type === "admin") goToAdmin();
+    else goToHomeSection(link.target);
+  };
+
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 border-b border-yellow-400/10 bg-black/75 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-5 sm:py-4">
-        <button onClick={() => setPage("home")} className="flex items-center gap-3">
-          <img
-            src={LOGO}
-            alt="Hangover Gaming Cult"
-            className="h-11 w-11 rounded-xl border border-yellow-400/20 object-cover shadow-[0_0_20px_rgba(245,197,66,0.2)] sm:h-12 sm:w-12"
-          />
-          <div className="text-left">
-            <p className="text-xs font-black tracking-widest text-yellow-300 sm:text-sm">
-              HANGOVER
-            </p>
-            <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-zinc-400 sm:text-[10px]">
-              Gaming Cult
-            </p>
+    <header className="fixed left-0 right-0 top-0 z-50 border-b border-yellow-400/10 bg-black/60 px-5 py-4 backdrop-blur-2xl sm:px-8 lg:px-16">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between">
+        <button onClick={() => goToHomeSection("home")} className="flex items-center gap-3">
+          <div className="h-10 w-10 overflow-hidden rounded-xl border border-yellow-400/25">
+            <img src="/images/logo.png" alt="Logo" className="h-full w-full object-cover" />
+          </div>
+
+          <div className="text-lg font-black uppercase tracking-[0.2em]">
+            <span className="text-white">Hangover</span>
+            <span className="text-yellow-400"> Cult</span>
           </div>
         </button>
 
-        <nav className="hidden items-center gap-7 text-xs font-bold uppercase tracking-widest text-zinc-300 md:flex">
-          <button onClick={() => setPage("home")} className="hover:text-yellow-400">
-            Home
-          </button>
-          <a href="#pricing" className="hover:text-yellow-400">
-            Pricing
-          </a>
-          <a href="#booking" className="hover:text-yellow-400">
-            Booking
-          </a>
-          <button onClick={() => setPage("admin")} className="hover:text-yellow-400">
-            Admin
-          </button>
-        </nav>
+        <div className="hidden items-center gap-7 md:flex">
+          {navLinks.map((link) => (
+            <button
+              key={link.label}
+              onClick={() => handleClick(link)}
+              className="text-xs font-black uppercase tracking-[0.2em] text-white/55 transition hover:text-yellow-300"
+            >
+              {link.label}
+            </button>
+          ))}
+        </div>
 
         <button
-          onClick={() => setPage("admin")}
-          className="rounded-full bg-gradient-to-r from-yellow-300 to-amber-700 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-black shadow-[0_0_20px_rgba(245,197,66,0.25)] transition active:scale-95 sm:px-5 sm:py-3 sm:text-xs"
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="rounded-xl border border-white/10 bg-white/5 p-3 md:hidden"
         >
-          Admin
+          {menuOpen ? <FaTimes /> : <FaBars />}
         </button>
-      </div>
+      </nav>
+
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="mt-4 grid gap-3 rounded-3xl border border-yellow-400/15 bg-black/90 p-4 md:hidden"
+          >
+            {navLinks.map((link) => (
+              <button
+                key={link.label}
+                onClick={() => handleClick(link)}
+                className="rounded-2xl bg-white/[0.04] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.2em] text-white/65"
+              >
+                {link.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
 
-function BookingStatusCard({ booking }) {
-  if (!booking) return null;
-
-  const isConfirmed = booking.status === "Confirmed";
-  const isCancelled = booking.status === "Cancelled";
-
-  const title = isConfirmed
-    ? "Your booking is confirmed"
-    : isCancelled
-    ? "Your booking was cancelled"
-    : "Your booking request is waiting";
-
-  const text = isConfirmed
-    ? "Your slot is confirmed. Please reach on time and show this booking status if needed."
-    : isCancelled
-    ? "The owner marked this booking as cancelled. Please contact the lounge or create a new request."
-    : "Your request has been sent. The owner can confirm it from the admin dashboard.";
-
-  const Icon = isConfirmed ? FaCheckCircle : isCancelled ? FaTimes : FaClock;
-
+function HeroImageCard() {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`mt-6 rounded-[1.7rem] border p-5 ${
-        isConfirmed
-          ? "border-green-400/20 bg-green-500/10"
-          : isCancelled
-          ? "border-red-400/20 bg-red-500/10"
-          : "border-yellow-400/20 bg-yellow-400/10"
-      }`}
+      initial={{ opacity: 0, scale: 0.92, y: 40 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 1, delay: 0.2 }}
+      className="relative mx-auto w-full max-w-xl"
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div
-            className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${
-              isConfirmed
-                ? "bg-green-400 text-black"
-                : isCancelled
-                ? "bg-red-400 text-black"
-                : "bg-yellow-400 text-black"
-            }`}
-          >
-            <Icon />
-          </div>
+      <motion.div
+        className="absolute -inset-10 rounded-full bg-yellow-600/20 blur-3xl"
+        animate={{ scale: [1, 1.12, 1], opacity: [0.35, 0.7, 0.35] }}
+        transition={{ duration: 3, repeat: Infinity }}
+      />
 
-          <div>
-            <h3 className="text-xl font-black">{title}</h3>
-            <p className="mt-2 text-sm leading-6 text-zinc-300">{text}</p>
+      <div className="relative overflow-hidden rounded-[2.5rem] border border-yellow-400/20 bg-white/[0.04] p-4 shadow-[0_0_70px_rgba(234,179,8,.18)] backdrop-blur-xl">
+        <div className="relative h-[520px] overflow-hidden rounded-[2rem]">
+          <img
+            src="/images/ps5.jpg"
+            alt="PS5 Arena"
+            onError={(e) => {
+              e.currentTarget.src = "/images/logo.png";
+            }}
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent" />
 
-            <div className="mt-4 grid gap-2 text-sm text-zinc-400 sm:grid-cols-3">
-              <p>
-                <span className="text-zinc-500">Game:</span>{" "}
-                <b className="text-white">{booking.game}</b>
-              </p>
-              <p>
-                <span className="text-zinc-500">Date:</span>{" "}
-                <b className="text-white">{booking.date}</b>
-              </p>
-              <p>
-                <span className="text-zinc-500">Time:</span>{" "}
-                <b className="text-white">{booking.time}</b>
-              </p>
+          <div className="absolute bottom-6 left-6 right-6 rounded-3xl border border-yellow-400/20 bg-black/60 p-5 backdrop-blur-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-green-300">
+                Open Now
+              </span>
+              <span className="text-xs uppercase tracking-[0.2em] text-white/35">
+                Premium Lounge
+              </span>
             </div>
+
+            <h3 className="text-2xl font-black">Gold Class Gaming Lounge</h3>
+            <p className="mt-2 text-sm text-white/55">
+              PS5, PS4, snooker, table football, and owner approval booking.
+            </p>
           </div>
         </div>
-
-        <span
-          className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest ${
-            isConfirmed
-              ? "bg-green-400/20 text-green-300"
-              : isCancelled
-              ? "bg-red-400/20 text-red-300"
-              : "bg-yellow-400/20 text-yellow-300"
-          }`}
-        >
-          {booking.status}
-        </span>
       </div>
     </motion.div>
   );
 }
 
-function HomePage({ data, setData, setPage, isMobile }) {
-  const [lastBookingId, setLastBookingId] = useState(loadLastBookingId());
-  const [booking, setBooking] = useState({
-    name: "",
-    phone: "",
-    game: "PS5",
-    date: "",
-    time: "",
-    people: "1",
-    message: "",
-  });
-
-  const [bookingStatus, setBookingStatus] = useState("");
-
-  const lastBooking = useMemo(() => {
-    if (!lastBookingId) return null;
-    return data.bookings?.find((item) => item.id === lastBookingId) || null;
-  }, [data.bookings, lastBookingId]);
-
-  function submitBooking(e) {
-    e.preventDefault();
-
-    if (!booking.name || !booking.phone || !booking.date || !booking.time) {
-      setBookingStatus("Fill name, phone, date and time.");
-      return;
-    }
-
-    const newBooking = {
-      id: Date.now(),
-      ...booking,
-      status: "New",
-      createdAt: new Date().toLocaleString(),
-    };
-
-    const updated = {
-      ...data,
-      bookings: [newBooking, ...(data.bookings || [])],
-    };
-
-    setData(updated);
-    saveData(updated);
-    saveLastBookingId(newBooking.id);
-    setLastBookingId(newBooking.id);
-
-    setBooking({
-      name: "",
-      phone: "",
-      game: "PS5",
-      date: "",
-      time: "",
-      people: "1",
-      message: "",
-    });
-
-    setBookingStatus("Booking request sent. Owner can confirm it in Admin.");
-  }
-
+function SectionTitle({ eyebrow, title, desc }) {
   return (
-    <main>
-      <section
-        id="home"
-        className="gold-noise relative min-h-screen overflow-hidden px-4 pb-16 pt-28 sm:px-5 sm:pb-20 sm:pt-36 lg:pt-40"
-      >
-        <div className="gold-grid absolute inset-0 opacity-80" />
-        <div className="pulse-gold absolute left-1/2 top-24 h-72 w-72 -translate-x-1/2 rounded-full bg-yellow-500/20 blur-[95px] lg:h-[550px] lg:w-[550px]" />
-
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-          <motion.div
-            initial={isMobile ? { opacity: 0, y: 18 } : { opacity: 0, y: 34 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: isMobile ? 0.35 : 0.7 }}
-          >
-            <img
-              src={LOGO}
-              alt="Hangover Gaming Cult"
-              className="mb-6 h-24 w-24 rounded-2xl border border-yellow-400/20 object-cover shadow-[0_0_35px_rgba(245,197,66,0.18)] sm:h-28 sm:w-28"
-            />
-
-            <div className="mb-5 inline-flex items-center gap-3 rounded-full border border-yellow-400/25 bg-yellow-400/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-yellow-300 sm:text-xs">
-              <span className="h-2 w-2 rounded-full bg-yellow-300 shadow-[0_0_18px_rgba(245,197,66,1)]" />
-              Premium 24hrs Gaming Lounge
-            </div>
-
-            <h1 className="max-w-5xl text-4xl font-black uppercase leading-[0.9] tracking-tighter text-white sm:text-6xl lg:text-8xl">
-              Hangover
-              <span className="shine block bg-gradient-to-r from-yellow-200 via-white to-amber-600 bg-clip-text text-transparent">
-                Gaming Cult
-              </span>
-            </h1>
-
-            <p className="mt-6 max-w-2xl text-sm leading-7 text-zinc-300 sm:text-lg sm:leading-8">
-              A 24hrs black-and-gold gaming lounge for PS5, PS4, PS2, Snooker,
-              Table Football, squad nights, birthday plans, and serious gaming sessions.
-            </p>
-
-            <p className="mt-4 text-lg font-black text-yellow-300 sm:text-2xl">
-              Console Gaming. Snooker. Friends. Vibe.
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
-              <GoldButton href="#booking">
-                <FaCalendarDay />
-                Book a Slot
-              </GoldButton>
-              <GoldButton href="#pricing" variant="secondary">
-                <FaPlay />
-                View Pricing
-              </GoldButton>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={isMobile ? { opacity: 0, y: 18 } : { opacity: 0, scale: 0.94 }}
-            animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1 }}
-            transition={{ duration: isMobile ? 0.35 : 0.7, delay: 0.1 }}
-            className="relative"
-          >
-            <div className="gold-card gold-glow relative overflow-hidden rounded-[2rem] p-4 sm:p-7">
-              <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-yellow-500/20 blur-3xl" />
-              <div className="relative rounded-[1.5rem] border border-yellow-400/20 bg-black/70 p-4 sm:p-5">
-                <div className="mb-6 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-yellow-400">
-                      Live Lounge
-                    </p>
-                    <h3 className="mt-2 text-xl font-black sm:text-2xl">
-                      Open 24 Hours
-                    </h3>
-                  </div>
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-yellow-300 to-amber-700 text-black">
-                    <FaGamepad />
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:gap-4">
-                  {[
-                    ["PS5 Zone", "Next-gen gaming sessions", "READY"],
-                    ["Snooker Arena", "Premium table experience", "OPEN"],
-                    ["Table Football", "Quick matches with friends", "LIVE"],
-                  ].map(([title, desc, tag]) => (
-                    <div
-                      key={title}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-yellow-400/10 bg-white/[0.04] p-4"
-                    >
-                      <div>
-                        <p className="font-black">{title}</p>
-                        <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
-                          {desc}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-yellow-400/15 px-3 py-1 text-[10px] font-black text-yellow-300 sm:text-xs">
-                        {tag}
-                      </span>
-                    </div>
-                  ))}
-
-                  {data.announcement?.enabled && (
-                    <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4">
-                      <p className="font-black text-yellow-300">
-                        {data.announcement.title}
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-400">
-                        {data.announcement.message}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-6 rounded-2xl bg-gradient-to-r from-yellow-300 via-amber-600 to-yellow-950 p-5 text-black">
-                  <p className="text-sm font-black">Current timing</p>
-                  <p className="mt-1 text-2xl font-black">{data.timings.opening}</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      <section id="zones" className="px-4 py-14 sm:px-5 sm:py-24">
-        <div className="mx-auto max-w-7xl">
-          <SectionTitle
-            eyebrow="Gaming Zones"
-            title="Choose your zone. Own the night."
-            text="Premium spaces for console gaming, snooker, table football, friends, and late-night sessions."
-          />
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.12 }}
-            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5"
-          >
-            {zones.map((zone) => {
-              const Icon = zone.icon;
-              const price = data.prices.find((p) =>
-                zone.title.toLowerCase().includes(p.item.toLowerCase().split(" ")[0])
-              );
-
-              return (
-                <motion.div
-                  key={zone.title}
-                  variants={fadeUp}
-                  whileHover={isMobile ? {} : { y: -8, scale: 1.015 }}
-                  transition={{ duration: 0.25 }}
-                  className="group rounded-[1.7rem] border border-yellow-400/10 bg-zinc-950 p-5 transition hover:border-yellow-400/45 hover:bg-yellow-950/10"
-                >
-                  <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-yellow-400/10 text-yellow-400 transition group-hover:bg-yellow-400 group-hover:text-black">
-                    <Icon />
-                  </div>
-                  <h3 className="text-xl font-black">{zone.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-zinc-400">{zone.desc}</p>
-                  <p className="mt-5 rounded-full border border-yellow-400/20 bg-yellow-400/10 px-4 py-3 text-xs font-black text-yellow-300">
-                    {price?.price || "Price updating soon"}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="bg-gradient-to-b from-[#030303] via-[#151105] to-[#030303] px-4 py-14 sm:px-5 sm:py-24">
-        <div className="mx-auto max-w-7xl">
-          <SectionTitle
-            eyebrow="Why Visit"
-            title="Built for 24hrs gaming culture."
-            text="A premium lounge experience made for friends, groups, events, and competitive sessions."
-          />
-
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            {benefits.map((item) => {
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={item.title}
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.2 }}
-                  whileHover={isMobile ? {} : { scale: 1.03, y: -4 }}
-                  className="rounded-[1.7rem] border border-yellow-400/10 bg-black/50 p-6"
-                >
-                  <Icon className="text-3xl text-yellow-400" />
-                  <h3 className="mt-5 text-xl font-black">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-zinc-400">{item.desc}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section id="pricing" className="px-4 py-14 sm:px-5 sm:py-24">
-        <div className="mx-auto max-w-5xl">
-          <SectionTitle
-            eyebrow="Price Menu"
-            title="Game rates, session plans, and lounge pricing."
-            text="Clear pricing helps customers choose quickly and book the right slot."
-          />
-
-          <div className="overflow-hidden rounded-[2rem] border border-yellow-400/20 bg-zinc-950 shadow-[0_0_45px_rgba(245,197,66,0.08)]">
-            <div className="grid grid-cols-2 bg-gradient-to-r from-yellow-300 to-amber-700 px-5 py-4 text-sm font-black uppercase tracking-widest text-black">
-              <p>Zone</p>
-              <p className="text-right">Rate</p>
-            </div>
-
-            {data.prices.map((row) => (
-              <div
-                key={row.item}
-                className="grid grid-cols-2 border-t border-white/10 px-5 py-5"
-              >
-                <p className="font-bold text-white">{row.item}</p>
-                <p className="text-right font-black text-yellow-300">{row.price}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="offers" className="px-4 py-14 sm:px-5 sm:py-24">
-        <div className="mx-auto max-w-7xl">
-          <SectionTitle
-            eyebrow="Offers"
-            title="Plans that bring squads back."
-            text="The owner can add, edit, or remove these from the admin dashboard."
-          />
-
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {data.offers.map((offer, index) => {
-              const icons = [FaCalendarAlt, FaUsers, FaBirthdayCake, FaTrophy];
-              const Icon = icons[index % icons.length];
-
-              return (
-                <motion.div
-                  key={`${offer.title}-${index}`}
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.2 }}
-                  whileHover={isMobile ? {} : { y: -8, scale: 1.015 }}
-                  className="relative overflow-hidden rounded-[1.7rem] border border-yellow-400/10 bg-gradient-to-br from-zinc-950 to-black p-6"
-                >
-                  <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-yellow-500/16 blur-2xl" />
-                  <Icon className="relative text-3xl text-yellow-400" />
-                  <h3 className="relative mt-5 text-xl font-black">{offer.title}</h3>
-                  <p className="relative mt-3 text-sm leading-7 text-zinc-400">
-                    {offer.description}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section id="gallery" className="bg-[#080808] px-4 py-14 sm:px-5 sm:py-24">
-        <div className="mx-auto max-w-7xl">
-          <SectionTitle
-            eyebrow="Gallery"
-            title="Inside the lounge."
-            text="Add real cafe photos inside public/images and update paths from admin."
-          />
-
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {data.gallery.map((item, index) => (
-              <motion.div
-                key={`${item.title}-${index}`}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-                whileHover={isMobile ? {} : { scale: 1.025 }}
-                className="group relative min-h-[250px] overflow-hidden rounded-[1.7rem] border border-yellow-400/10 bg-black"
-              >
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="absolute inset-0 h-full w-full object-cover opacity-75 transition duration-500 group-hover:scale-110 group-hover:opacity-90"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(245,197,66,0.18),transparent_45%)]" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" />
-                <div className="relative flex h-full min-h-[250px] flex-col justify-end p-5">
-                  <FaCamera className="mb-4 text-3xl text-yellow-400" />
-                  <p className="text-xl font-black">{item.title}</p>
-                  <p className="mt-2 text-sm text-zinc-300">Hangover Gaming Cult</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="booking" className="px-4 py-14 sm:px-5 sm:py-24">
-        <div className="mx-auto max-w-7xl">
-          <SectionTitle
-            eyebrow="Booking"
-            title="Reserve your gaming slot."
-            text="Choose your game, pick a time, send the request, and check the booking status here after admin confirms."
-          />
-
-          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="rounded-[2rem] border border-yellow-400/10 bg-black/60 p-5 sm:p-6">
-              <div className="mb-5 flex items-center gap-3">
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-yellow-400 text-black">
-                  <FaShieldAlt />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black">Slot Summary</h3>
-                  <p className="text-sm text-zinc-500">Open 24 hours everyday</p>
-                </div>
-              </div>
-
-              <div className="grid gap-3">
-                <SummaryRow label="Selected game" value={booking.game} />
-                <SummaryRow label="Date" value={booking.date || "Choose date"} />
-                <SummaryRow label="Time" value={booking.time || "Choose time"} />
-                <SummaryRow label="People" value={booking.people || "1"} />
-              </div>
-
-              <BookingStatusCard booking={lastBooking} />
-            </div>
-
-            <form
-              onSubmit={submitBooking}
-              className="rounded-[2rem] border border-yellow-400/10 bg-zinc-950 p-5 shadow-[0_0_50px_rgba(245,197,66,0.08)] sm:p-6"
-            >
-              <div className="mb-5">
-                <h3 className="text-2xl font-black">Choose your zone</h3>
-                <p className="mt-2 text-sm text-zinc-500">
-                  Tap one game/activity to reserve a slot.
-                </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {bookingGames.map((game) => {
-                  const Icon = game.icon;
-                  const active = booking.game === game.name;
-
-                  return (
-                    <button
-                      type="button"
-                      key={game.name}
-                      onClick={() => setBooking({ ...booking, game: game.name })}
-                      className={`rounded-2xl border p-4 text-left transition active:scale-95 ${
-                        active
-                          ? "border-yellow-400 bg-yellow-400 text-black"
-                          : "border-yellow-400/10 bg-black text-white hover:border-yellow-400/40"
-                      }`}
-                    >
-                      <Icon className={active ? "text-black" : "text-yellow-400"} />
-                      <p className="mt-3 font-black">{game.name}</p>
-                      <p className={active ? "mt-1 text-xs text-black/70" : "mt-1 text-xs text-zinc-500"}>
-                        {game.tag}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <Input
-                  icon={FaUser}
-                  placeholder="Your name"
-                  value={booking.name}
-                  onChange={(value) => setBooking({ ...booking, name: value })}
-                />
-                <Input
-                  icon={FaPhoneAlt}
-                  placeholder="Phone number"
-                  value={booking.phone}
-                  onChange={(value) => setBooking({ ...booking, phone: value })}
-                />
-                <Input
-                  type="number"
-                  icon={FaUsers}
-                  placeholder="People count"
-                  value={booking.people}
-                  onChange={(value) => setBooking({ ...booking, people: value })}
-                />
-                <Input
-                  type="date"
-                  icon={FaCalendarDay}
-                  value={booking.date}
-                  onChange={(value) => setBooking({ ...booking, date: value })}
-                />
-                <Input
-                  type="time"
-                  icon={FaClock}
-                  value={booking.time}
-                  onChange={(value) => setBooking({ ...booking, time: value })}
-                />
-                <div className="flex items-center gap-3 rounded-2xl border border-yellow-400/10 bg-black px-4 py-3">
-                  <FaCircle className="text-xs text-green-400" />
-                  <p className="text-sm font-bold text-zinc-300">24hrs available</p>
-                </div>
-              </div>
-
-              <textarea
-                placeholder="Message / special request"
-                value={booking.message}
-                onChange={(e) => setBooking({ ...booking, message: e.target.value })}
-                className="mt-4 min-h-[120px] w-full resize-none rounded-2xl border border-yellow-400/10 bg-black px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-yellow-400"
-              />
-
-              <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
-                <GoldButton type="submit">
-                  <FaCheck />
-                  Send Booking Request
-                </GoldButton>
-
-                {bookingStatus && (
-                  <p className="text-sm font-bold text-yellow-300">{bookingStatus}</p>
-                )}
-              </div>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-gradient-to-b from-[#030303] to-[#151105] px-4 py-14 sm:px-5 sm:py-24">
-        <div className="mx-auto max-w-7xl">
-          <SectionTitle
-            eyebrow="Location"
-            title="Find the lounge."
-            text="This map searches for Hangover Gaming Cult. Replace it with the exact Google Maps embed later."
-          />
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[2rem] border border-yellow-400/10 bg-black/60 p-6">
-              <h3 className="text-2xl font-black">Hangover Gaming Cult</h3>
-              <p className="mt-3 text-sm leading-7 text-zinc-400">
-                Open 24 hours for console gaming, snooker, table football,
-                birthday sessions, friend groups, and late-night gaming culture.
-              </p>
-
-              <div className="mt-6 flex flex-col gap-4">
-                <GoldButton href={INSTAGRAM_URL}>
-                  <FaInstagram />
-                  @hangover_gaming_cult
-                </GoldButton>
-
-                <GoldButton href="#booking" variant="secondary">
-                  <FaCalendarDay />
-                  Book a Slot
-                </GoldButton>
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-[2rem] border border-yellow-400/10 bg-zinc-950 p-3">
-              <iframe
-                title="Hangover Gaming Cult Map"
-                src="https://www.google.com/maps?q=Hangover%20Gaming%20Cult&output=embed"
-                className="h-[360px] w-full rounded-[1.5rem] border-0"
-                loading="lazy"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
-}
-
-function SummaryRow({ label, value }) {
-  return (
-    <div className="flex items-center justify-between rounded-2xl border border-yellow-400/10 bg-white/[0.04] px-4 py-3">
-      <p className="text-sm text-zinc-500">{label}</p>
-      <p className="text-sm font-black text-yellow-300">{value}</p>
+    <div className="mx-auto max-w-3xl text-center">
+      <div className="mb-4 inline-flex rounded-full border border-yellow-400/30 bg-yellow-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.25em] text-yellow-200">
+        {eyebrow}
+      </div>
+      <h2 className="text-4xl font-black uppercase leading-tight sm:text-5xl">{title}</h2>
+      <p className="mt-5 leading-8 text-white/55">{desc}</p>
     </div>
   );
 }
 
-function Input({ icon: Icon, value, onChange, placeholder, type = "text" }) {
+function InfoRow({ icon, label, value }) {
   return (
-    <label className="flex items-center gap-3 rounded-2xl border border-yellow-400/10 bg-black px-4 py-3 focus-within:border-yellow-400">
-      {Icon && <Icon className="shrink-0 text-yellow-400" />}
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-zinc-600"
-      />
-    </label>
-  );
-}
-
-function AdminPage({ data, setData, setPage }) {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [password, setPassword] = useState("");
-  const [draft, setDraft] = useState(data);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    setDraft(data);
-  }, [data]);
-
-  function login(e) {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setLoggedIn(true);
-      setDraft(data);
-      setMessage("");
-    } else {
-      setMessage("Wrong password.");
-    }
-  }
-
-  function saveDraft() {
-    setData(draft);
-    saveData(draft);
-    setMessage("Saved successfully.");
-    setTimeout(() => setMessage(""), 1600);
-  }
-
-  function updatePrice(index, key, value) {
-    const copy = structuredClone(draft);
-    copy.prices[index][key] = value;
-    setDraft(copy);
-  }
-
-  function updateOffer(index, key, value) {
-    const copy = structuredClone(draft);
-    copy.offers[index][key] = value;
-    setDraft(copy);
-  }
-
-  function updateGallery(index, key, value) {
-    const copy = structuredClone(draft);
-    copy.gallery[index][key] = value;
-    setDraft(copy);
-  }
-
-  function addOffer() {
-    setDraft({
-      ...draft,
-      offers: [
-        ...draft.offers,
-        { title: "New Offer", description: "Offer description here." },
-      ],
-    });
-  }
-
-  function removeOffer(index) {
-    const copy = structuredClone(draft);
-    copy.offers.splice(index, 1);
-    setDraft(copy);
-  }
-
-  function updateBookingStatus(id, status) {
-    const copy = structuredClone(draft);
-    copy.bookings = copy.bookings.map((booking) =>
-      booking.id === id ? { ...booking, status } : booking
-    );
-    setDraft(copy);
-    setData(copy);
-    saveData(copy);
-    setMessage(
-      status === "Confirmed"
-        ? "Booking confirmed. Customer will see confirmed status."
-        : "Booking status updated."
-    );
-    setTimeout(() => setMessage(""), 1800);
-  }
-
-  if (!loggedIn) {
-    return (
-      <main className="min-h-screen bg-[#030303] px-4 pb-20 pt-32 sm:px-5">
-        <form
-          onSubmit={login}
-          className="mx-auto max-w-md rounded-[2rem] border border-yellow-400/10 bg-zinc-950 p-6"
-        >
-          <img
-            src={LOGO}
-            alt="Logo"
-            className="mx-auto h-24 w-24 rounded-2xl border border-yellow-400/20 object-cover"
-          />
-          <h1 className="mt-6 text-center text-3xl font-black">Admin Login</h1>
-          <p className="mt-3 text-center text-sm text-zinc-400">
-            Manage prices, offers, bookings, gallery, and announcements.
-          </p>
-
-          <div className="mt-6">
-            <Input
-              icon={FaLock}
-              type="password"
-              placeholder="Admin password"
-              value={password}
-              onChange={setPassword}
-            />
-          </div>
-
-          <div className="mt-5">
-            <GoldButton type="submit">
-              <FaLock />
-              Login
-            </GoldButton>
-          </div>
-
-          {message && <p className="mt-4 text-sm font-bold text-yellow-300">{message}</p>}
-
-          <p className="mt-5 text-xs text-zinc-500">
-            Demo password: <span className="text-yellow-300">hangover123</span>
-          </p>
-        </form>
-      </main>
-    );
-  }
-
-  return (
-    <main className="min-h-screen bg-[#030303] px-4 pb-20 pt-28 sm:px-5 sm:pt-32">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col justify-between gap-5 rounded-[2rem] border border-yellow-400/10 bg-black/60 p-5 sm:p-6 md:flex-row md:items-center">
-          <div className="flex items-center gap-4">
-            <img
-              src={LOGO}
-              alt="Logo"
-              className="h-16 w-16 rounded-2xl border border-yellow-400/20 object-cover"
-            />
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-yellow-400">
-                Admin Dashboard
-              </p>
-              <h1 className="mt-2 text-3xl font-black md:text-5xl">
-                Control Room
-              </h1>
-              <p className="mt-2 text-sm text-zinc-400">
-                Confirm bookings, update prices, edit offers and gallery.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <GoldButton onClick={() => setPage("home")} variant="secondary">
-              <FaHome />
-              Website
-            </GoldButton>
-            <GoldButton onClick={saveDraft}>
-              <FaSave />
-              Save
-            </GoldButton>
-          </div>
-        </div>
-
-        {message && (
-          <div className="mb-6 rounded-2xl border border-green-400/20 bg-green-500/10 p-4 text-sm font-bold text-green-300">
-            {message}
-          </div>
-        )}
-
-        <AdminCard icon={FaCalendarDay} title="Booking Requests">
-          <div className="grid gap-4">
-            {draft.bookings?.length ? (
-              draft.bookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="rounded-2xl border border-yellow-400/10 bg-black/60 p-4"
-                >
-                  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-xl font-black">{booking.name}</h3>
-                        <span
-                          className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest ${
-                            booking.status === "Confirmed"
-                              ? "bg-green-400/20 text-green-300"
-                              : booking.status === "Cancelled"
-                              ? "bg-red-400/20 text-red-300"
-                              : "bg-yellow-400/20 text-yellow-300"
-                          }`}
-                        >
-                          {booking.status}
-                        </span>
-                      </div>
-
-                      <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
-                        <p>
-                          <span className="text-zinc-500">Phone:</span>{" "}
-                          <b>{booking.phone}</b>
-                        </p>
-                        <p>
-                          <span className="text-zinc-500">Game:</span>{" "}
-                          <b>{booking.game}</b>
-                        </p>
-                        <p>
-                          <span className="text-zinc-500">People:</span>{" "}
-                          <b>{booking.people}</b>
-                        </p>
-                        <p>
-                          <span className="text-zinc-500">Date:</span>{" "}
-                          <b>{booking.date}</b>
-                        </p>
-                        <p>
-                          <span className="text-zinc-500">Time:</span>{" "}
-                          <b>{booking.time}</b>
-                        </p>
-                        <p>
-                          <span className="text-zinc-500">Created:</span>{" "}
-                          <b>{booking.createdAt}</b>
-                        </p>
-                      </div>
-
-                      {booking.message && (
-                        <p className="mt-3 text-sm text-zinc-400">{booking.message}</p>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                      <button
-                        onClick={() => updateBookingStatus(booking.id, "Confirmed")}
-                        className="rounded-full bg-green-500/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-green-300 transition hover:bg-green-500/20"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        onClick={() => updateBookingStatus(booking.id, "Cancelled")}
-                        className="rounded-full bg-red-500/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-red-300 transition hover:bg-red-500/20"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-zinc-400">No bookings yet.</p>
-            )}
-          </div>
-        </AdminCard>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <AdminCard icon={FaClock} title="Opening Hours">
-            <div className="grid gap-4">
-              <AdminField
-                label="Opening Text"
-                value={draft.timings.opening}
-                onChange={(value) =>
-                  setDraft({ ...draft, timings: { ...draft.timings, opening: value } })
-                }
-              />
-              <AdminField
-                label="Closing Text"
-                value={draft.timings.closing}
-                onChange={(value) =>
-                  setDraft({ ...draft, timings: { ...draft.timings, closing: value } })
-                }
-              />
-            </div>
-          </AdminCard>
-
-          <AdminCard icon={FaBullhorn} title="Announcement Choice">
-            <label className="mb-5 flex items-center gap-3 text-sm font-bold text-zinc-300">
-              <input
-                type="checkbox"
-                checked={draft.announcement?.enabled || false}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    announcement: { ...draft.announcement, enabled: e.target.checked },
-                  })
-                }
-              />
-              Show announcement on website
-            </label>
-
-            <div className="grid gap-4">
-              <AdminField
-                label="Announcement Title"
-                value={draft.announcement?.title || ""}
-                onChange={(value) =>
-                  setDraft({
-                    ...draft,
-                    announcement: { ...draft.announcement, title: value },
-                  })
-                }
-              />
-              <AdminField
-                label="Announcement Message"
-                value={draft.announcement?.message || ""}
-                onChange={(value) =>
-                  setDraft({
-                    ...draft,
-                    announcement: { ...draft.announcement, message: value },
-                  })
-                }
-              />
-            </div>
-          </AdminCard>
-        </div>
-
-        <AdminCard icon={FaGamepad} title="Prices" className="mt-6">
-          <div className="grid gap-4">
-            {draft.prices.map((row, index) => (
-              <div
-                key={index}
-                className="grid gap-3 rounded-2xl bg-black/60 p-4 md:grid-cols-2"
-              >
-                <AdminField
-                  label="Item"
-                  value={row.item}
-                  onChange={(value) => updatePrice(index, "item", value)}
-                />
-                <AdminField
-                  label="Price"
-                  value={row.price}
-                  onChange={(value) => updatePrice(index, "price", value)}
-                />
-              </div>
-            ))}
-          </div>
-        </AdminCard>
-
-        <AdminCard icon={FaFire} title="Offers" className="mt-6">
-          <button
-            onClick={addOffer}
-            className="mb-5 inline-flex items-center justify-center gap-2 rounded-full border border-yellow-400/20 bg-yellow-400/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-yellow-300"
-          >
-            <FaPlus />
-            Add Offer
-          </button>
-
-          <div className="grid gap-4">
-            {draft.offers.map((offer, index) => (
-              <div key={index} className="rounded-2xl bg-black/60 p-4">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <AdminField
-                    label="Offer Title"
-                    value={offer.title}
-                    onChange={(value) => updateOffer(index, "title", value)}
-                  />
-                  <AdminField
-                    label="Description"
-                    value={offer.description}
-                    onChange={(value) => updateOffer(index, "description", value)}
-                  />
-                </div>
-
-                <button
-                  onClick={() => removeOffer(index)}
-                  className="mt-4 inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-red-300"
-                >
-                  <FaTrash />
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        </AdminCard>
-
-        <AdminCard icon={FaImage} title="Gallery Images" className="mt-6">
-          <p className="mb-5 text-sm leading-7 text-zinc-400">
-            Put photos inside <span className="text-yellow-300">public/images</span>,
-            then use paths like <span className="text-yellow-300">/images/ps5.jpg</span>.
-          </p>
-
-          <div className="grid gap-4">
-            {draft.gallery.map((image, index) => (
-              <div
-                key={index}
-                className="grid gap-3 rounded-2xl bg-black/60 p-4 md:grid-cols-[1fr_1fr_160px] md:items-end"
-              >
-                <AdminField
-                  label="Title"
-                  value={image.title}
-                  onChange={(value) => updateGallery(index, "title", value)}
-                />
-                <AdminField
-                  label="Image Path"
-                  value={image.image}
-                  onChange={(value) => updateGallery(index, "image", value)}
-                />
-                <img
-                  src={image.image}
-                  alt={image.title}
-                  className="h-24 w-full rounded-2xl border border-yellow-400/10 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.opacity = "0.15";
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </AdminCard>
+    <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-500/15 text-yellow-300">
+        {icon}
       </div>
-    </main>
-  );
-}
-
-function AdminCard({ icon: Icon, title, children, className = "" }) {
-  return (
-    <section
-      className={`rounded-[2rem] border border-yellow-400/10 bg-zinc-950 p-5 sm:p-6 ${className}`}
-    >
-      <div className="mb-5 flex items-center gap-3">
-        <Icon className="text-yellow-400" />
-        <h2 className="text-2xl font-black">{title}</h2>
+      <div>
+        <div className="text-xs uppercase tracking-[0.2em] text-white/35">{label}</div>
+        <div className="font-black text-white/85">{value}</div>
       </div>
-      {children}
-    </section>
+    </div>
   );
 }
 
-function AdminField({ label, value, onChange }) {
+function SiteFooter() {
   return (
-    <label className="block">
-      <span className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
-        {label}
-      </span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-yellow-400/10 bg-black px-4 py-3 text-sm text-white outline-none focus:border-yellow-400"
-      />
-    </label>
-  );
-}
-
-function Footer({ setPage }) {
-  return (
-    <footer className="border-t border-yellow-400/10 bg-black px-4 py-8 sm:px-5">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-        <div className="flex items-center gap-3">
-          <img
-            src={LOGO}
-            alt="Hangover Gaming Cult"
-            className="h-12 w-12 rounded-xl border border-yellow-400/20 object-cover"
-          />
-          <div>
-            <p className="font-black tracking-widest">HANGOVER GAMING CULT</p>
-            <p className="mt-1 text-sm text-zinc-500">
-              Open 24hrs. Console Gaming. Snooker. Friends. Vibe.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-2 sm:items-end">
-          <p className="text-sm font-bold text-zinc-500">
-            Demo website concept by{" "}
-            <span className="text-yellow-400">Samurai Websites</span>
-          </p>
-          <button
-            onClick={() => setPage("admin")}
-            className="text-xs font-black uppercase tracking-widest text-yellow-400"
-          >
-            Open Admin
-          </button>
-        </div>
+    <footer className="border-t border-white/10 px-5 py-12 text-center sm:px-8 lg:px-16">
+      <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-yellow-400/25 bg-white/[0.04]">
+        <img src="/images/logo.png" alt="Hangover Gaming Cult Logo" className="h-full w-full object-cover" />
       </div>
+
+      <h3 className="text-2xl font-black uppercase tracking-[0.2em] text-yellow-200">
+        Hangover Gaming Cult
+      </h3>
+
+      <p className="mt-3 text-sm text-white/40">
+        Premium booking website crafted by Samurai Websites.
+      </p>
+
+      <a
+        href={SAMURAI_WEBSITE_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="mx-auto mt-5 inline-flex items-center gap-3 rounded-full border border-yellow-400/20 bg-yellow-500/10 px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-yellow-100 transition hover:bg-yellow-500/20"
+      >
+        <FaGlobe />
+        Visit Samurai Websites
+      </a>
     </footer>
   );
 }
-
-function App() {
-  const [data, setData] = useState(defaultData);
-  const [page, setPage] = useState("home");
-  const [introDone, setIntroDone] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    setData(loadData());
-    setIsMobile(window.innerWidth < 768);
-
-    const timer = setTimeout(() => setIntroDone(true), 1100);
-
-    const resize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", resize);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [page]);
-
-  return (
-    <div className="min-h-screen overflow-hidden bg-[#030303] text-white">
-      <style>{`
-        .gold-noise {
-          background-image:
-            radial-gradient(circle at 20% 20%, rgba(245,197,66,0.12), transparent 26%),
-            radial-gradient(circle at 80% 10%, rgba(255,215,90,0.08), transparent 28%),
-            radial-gradient(circle at 50% 85%, rgba(120,80,10,0.16), transparent 32%);
-        }
-
-        .gold-grid {
-          background-image:
-            linear-gradient(rgba(245,197,66,0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(245,197,66,0.05) 1px, transparent 1px);
-          background-size: 44px 44px;
-          mask-image: linear-gradient(to bottom, black, transparent 82%);
-        }
-
-        .gold-card {
-          background: linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
-          border: 1px solid rgba(245,197,66,0.16);
-          box-shadow: 0 18px 60px rgba(0,0,0,0.45);
-        }
-
-        .gold-glow {
-          box-shadow:
-            0 0 0 1px rgba(245,197,66,0.14),
-            0 0 40px rgba(245,197,66,0.1);
-        }
-
-        .shine {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .shine::after {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: -120%;
-          width: 80%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
-          transform: skewX(-20deg);
-          animation: shineMove 4.8s ease-in-out infinite;
-        }
-
-        @keyframes shineMove {
-          0% { left: -120%; }
-          38% { left: 130%; }
-          100% { left: 130%; }
-        }
-
-        @media (min-width: 1024px) {
-          .pulse-gold {
-            animation: pulseGold 3.5s ease-in-out infinite;
-          }
-
-          @keyframes pulseGold {
-            0%, 100% { opacity: 0.45; transform: scale(1); }
-            50% { opacity: 0.85; transform: scale(1.06); }
-          }
-        }
-
-        @media (max-width: 767px) {
-          .gold-noise {
-            background-image:
-              radial-gradient(circle at 50% 5%, rgba(245,197,66,0.12), transparent 34%),
-              linear-gradient(to bottom, #030303, #080602, #030303);
-          }
-
-          .gold-grid {
-            background-size: 72px 72px;
-            opacity: 0.28 !important;
-          }
-
-          .gold-card {
-            box-shadow: 0 12px 35px rgba(0,0,0,0.38);
-          }
-
-          .gold-glow {
-            box-shadow:
-              0 0 0 1px rgba(245,197,66,0.12),
-              0 0 24px rgba(245,197,66,0.08);
-          }
-
-          .shine::after {
-            display: none;
-          }
-
-          .pulse-gold {
-            animation: none;
-            opacity: 0.55;
-          }
-
-          * {
-            -webkit-tap-highlight-color: transparent;
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          * {
-            animation-duration: 0.001ms !important;
-            animation-iteration-count: 1 !important;
-            scroll-behavior: auto !important;
-          }
-        }
-      `}</style>
-
-      <Intro done={introDone} />
-      <Header setPage={setPage} />
-
-      {page === "home" ? (
-        <HomePage data={data} setData={setData} setPage={setPage} isMobile={isMobile} />
-      ) : (
-        <AdminPage data={data} setData={setData} setPage={setPage} />
-      )}
-
-      <Footer setPage={setPage} />
-    </div>
-  );
-}
-
-export default App;
