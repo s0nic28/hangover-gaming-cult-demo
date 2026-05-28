@@ -1,13 +1,13 @@
-const CACHE_NAME = "hgc-app-v5";
+const CACHE_NAME = "hgc-app-v10";
 
-self.addEventListener("install", () => {
+self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((key) => (key !== CACHE_NAME ? caches.delete(key) : null)))
+      Promise.all(keys.map((key) => caches.delete(key)))
     )
   );
   self.clients.claim();
