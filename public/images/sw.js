@@ -1,4 +1,4 @@
-const CACHE_NAME = "hgc-app-v1";
+const CACHE_NAME = "hgc-app-v3";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
