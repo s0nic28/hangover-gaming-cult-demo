@@ -1,0 +1,25 @@
+{
+  "name": "Hangover Gaming Cult",
+  "short_name": "HGC",
+  "description": "Book PS5, PS4, Snooker, and Table Football slots at Hangover Gaming Cult.",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
