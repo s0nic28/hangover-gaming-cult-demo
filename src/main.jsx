@@ -9,10 +9,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 
+// TEMP FIX: remove old PWA cache/service worker
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/sw.js")
-      .catch((error) => console.log("Service worker registration failed:", error));
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => registration.unregister());
+  });
+}
+
+if ("caches" in window) {
+  caches.keys().then((names) => {
+    names.forEach((name) => caches.delete(name));
   });
 }
